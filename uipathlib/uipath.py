@@ -9,20 +9,21 @@ import json
 import logging
 from pydantic import BaseModel, Field, parse_obj_as, validator
 import requests
+from typing import Any, Type
 
 
 class UiPath(object):
     @dataclasses.dataclass
     class Configuration:
-        url_base: str = None
-        client_id: str = None
-        refresh_token: str = None
-        token: str = None
+        url_base: str | None = None
+        client_id: str | None = None
+        refresh_token: str | None = None
+        token: str | None = None
 
     @dataclasses.dataclass
     class Response:
         status_code: int
-        content: list | dict | str | None = None
+        content: Any = None
 
     def __init__(self, url_base: str, client_id: str, refresh_token: str) -> None:
         """
@@ -99,7 +100,7 @@ class UiPath(object):
         if response.status_code == 200:
             self.__configuration.token = json.loads(response.content.decode("utf-8"))["access_token"]
 
-    def _export_to_json(self, content: bytes, save_as: str) -> None:
+    def _export_to_json(self, content: bytes, save_as: str | None) -> None:
         """
         Export response content to a JSON file.
 
@@ -115,7 +116,7 @@ class UiPath(object):
             with open(file=save_as, mode="wb") as file:
                 file.write(content)
     
-    def _handle_response(self, response: requests.Response, model: BaseModel, rtype: str = "scalar") -> BaseModel | list[BaseModel]:
+    def _handle_response(self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar") -> BaseModel | list[BaseModel]:
         """
         Handles the response from an API request and deserializes the JSON content.
 
@@ -140,6 +141,7 @@ class UiPath(object):
             # Deserialize json
             content_raw = response.json()["value"]
             # Pydantic v1
+            # return parse_obj_as(list[model], content_raw)
             return [dict(data) for data in parse_obj_as(list[model], content_raw)]
 
     # ASSETS
@@ -654,11 +656,12 @@ class UiPath(object):
 
         return self.Response(status_code=response.status_code, content=None)
 
-    def stop_job(self, id: str) -> Response:
+    def stop_job(self, fid: str, id: str) -> Response:
         """
         Stops a job using a job id.
 
         Args:
+            fid (str): The folder ID for the organization unit.
             id (str): Job Id.
 
         Returns:
@@ -669,13 +672,12 @@ class UiPath(object):
 
         # Configuration
         token = self.__configuration.token
-        unit_id = self.__configuration.unit_id
         url_base = self.__configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
                    "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": unit_id}
+                   "X-UIPATH-OrganizationUnitID": fid}
 
         # Request query
         url_query = fr"{url_base}/odata/Jobs({id})/UiPath.Server.Configuration.OData.StopJob"
@@ -1011,20 +1013,20 @@ class UiPath(object):
         
         return self.Response(status_code=response.status_code, content=content)
 
-    def add_queue_item(self, fid: str, queue: str, content: dict, reference: str, priority: str = "Normal", save_as: str | None = None) -> Response:
+    def add_queue_item(self, fid: str, queue: str, data: dict, reference: str, priority: str = "Normal", save_as: str | None = None) -> Response:
         """
         Adds an item to a UiPath Orchestrator queue.
 
         Example: add_queue_item(fid="123",
                                 queue="ElegibilityQueueNAM",
-                                content={"PRCode": "PR1234"},
+                                data={"PRCode": "PR1234"},
                                 reference="PR1234",
                                 priority="Normal")
 
         Args:
             fid (str): The folder ID for the organization unit.
             queue (str): The name of the queue.
-            content (dict): A dictionary containing the item information.
+            data (dict): A dictionary containing the item information.
             reference (str): A unique reference for the queue item.
             priority (str, optional): The priority of the queue item. Defaults to "Normal".
             save_as (str, optional): The file path where the JSON content will be saved. 
@@ -1068,7 +1070,7 @@ class UiPath(object):
                              "DeferDate": None,
                              "DueDate": None,
                              "Reference": reference,
-                             "SpecificContent": content}}
+                             "SpecificContent": data}}
 
         # Request
         # .encode("utf-8")
@@ -1094,7 +1096,7 @@ class UiPath(object):
         
         return self.Response(status_code=response.status_code, content=content)
 
-    def update_queue_item(self, fid: str, queue: str, id: int, content: dict) -> Response:
+    def update_queue_item(self, fid: str, queue: str, id: int, data: dict) -> Response:
         """
         Updates an item in a UiPath Orchestrator queue.
 
@@ -1104,7 +1106,7 @@ class UiPath(object):
               Example: queue="ElegibilityQueueNAM"
             id (int): The ID of the queue item to update.
               Example: id=1489001
-            content (dict): A dictionary containing the updated item information.
+            data (dict): A dictionary containing the updated item information.
               Example: content={"PRCode": "PR1234"}
 
         Returns:
@@ -1128,7 +1130,7 @@ class UiPath(object):
         # Body
         body = {"Name": queue,
                 "Priority": "High",
-                "SpecificContent": content,
+                "SpecificContent": data,
                 "DeferDate": None,
                 "DueDate": None,
                 "RiskSlaDate": None}
@@ -1259,7 +1261,7 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the process key information.
         """
-        self.__logger.info(msg=f"Gets the process key")
+        self.__logger.info(msg="Gets the process key")
         self.__logger.info(msg=name)
 
         # Configuration

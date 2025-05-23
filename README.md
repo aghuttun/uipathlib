@@ -254,14 +254,13 @@ Install python and pip if you have not already.
 Then run:
 
 ```bash
-pip3 install pip --upgrade
-pip3 install wheel
+pip install pip --upgrade
 ```
 
 For production:
 
 ```bash
-pip3 install uipathlib
+pip install uipathlib
 ```
 
 This will install the package and all of it's python dependencies.
@@ -271,7 +270,7 @@ If you want to install the project for development:
 ```bash
 git clone https://github.com/aghuttun/uipathlib.git
 cd uipathlib
-pip3 install -e .[dev]
+pip install -e ".[dev]"
 ```
 
 To test the development package: [Testing](#testing)
