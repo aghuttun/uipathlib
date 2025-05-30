@@ -36,7 +36,7 @@ uipath = UiPath(url_base=url_base,
 # ASSETS
 response = uipath.list_assets(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -44,7 +44,7 @@ if response.status_code == 200:
 # BUCKETS
 response = uipath.list_buckets(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -77,7 +77,7 @@ print(response.status_code)
 # CALENDARS
 response = uipath.list_calendars(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -85,7 +85,7 @@ if response.status_code == 200:
 # ENVIRONMENTS (UNDER DEVELOPMENT)
 response = uipath.list_environments(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -93,7 +93,7 @@ if response.status_code == 200:
 # JOBS
 response = uipath.list_jobs(fid=fid, filter="State eq 'Running'")
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -109,7 +109,7 @@ if response.status_code == 201:
 # MACHINES
 response = uipath.list_machines(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -117,7 +117,7 @@ if response.status_code == 200:
 # PROCESSES
 response = uipath.list_processes(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -125,7 +125,7 @@ if response.status_code == 200:
 # QUEUES
 response = uipath.list_queues(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -133,7 +133,7 @@ if response.status_code == 200:
 response = uipath.list_queue_items(fid=fid, 
                                    filter="QueueDefinitionId eq 275435")
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -185,7 +185,7 @@ if response.status_code == 204:
 # RELEASES
 response = uipath.list_releases(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -203,14 +203,14 @@ if response.status_code == 200:
 fid = "1138051"
 response = uipath.list_robots(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
 ```python
 response = uipath.list_robot_logs(fid=fid, filter="JobKey eq a111d111-b111-1f11-b11d-111adac1111d")
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -225,7 +225,7 @@ if response.status_code == 200:
 # ROLES
 response = uipath.list_roles()
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -233,7 +233,7 @@ if response.status_code == 200:
 # SCHEDULES
 response = uipath.list_schedules(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
@@ -241,7 +241,7 @@ if response.status_code == 200:
 # SESSIONS
 response = uipath.list_sessions(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame(response.content)
+    df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 

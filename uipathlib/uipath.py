@@ -35,16 +35,16 @@ class UiPath(object):
             refresh_token (str): The refresh token for authentication.
         """
         # Init logging
-        self.__logger = logging.getLogger(name=__name__)
-        self.__logger.setLevel(level=logging.INFO)
+        self._logger = logging.getLogger(name=__name__)
+        self._logger.setLevel(level=logging.INFO)
         handler = logging.StreamHandler()
-        self.__logger.addHandler(handler)
+        self._logger.addHandler(handler)
 
         # Init variables
-        self.__session: requests.Session = requests.Session()
+        self._session: requests.Session = requests.Session()
 
         # Credentials/Configuration
-        self.__configuration = self.Configuration(url_base=url_base,
+        self._configuration = self.Configuration(url_base=url_base,
                                                   client_id=client_id,
                                                   refresh_token=refresh_token,
                                                   token=None)
@@ -56,8 +56,8 @@ class UiPath(object):
         """
         Cleans the house at the exit.
         """
-        self.__logger.info(msg="Cleans the house at the exit")
-        self.__session.close()
+        self._logger.info(msg="Cleans the house at the exit")
+        self._session.close()
 
     def is_auth(self) -> bool:
         """
@@ -66,8 +66,8 @@ class UiPath(object):
         Returns:
             bool: If true, then authentication was successful.
         """
-        self.__logger.info(msg="Gets authentication status")
-        return False if self.__configuration.token is None else True
+        self._logger.info(msg="Gets authentication status")
+        return False if self._configuration.token is None else True
 
     def auth(self) -> None:
         """
@@ -76,7 +76,7 @@ class UiPath(object):
         using the client credentials flow. The token is stored in the Configuration
         dataclass for subsequent API requests.
         """
-        self.__logger.info(msg="Authentication")
+        self._logger.info(msg="Authentication")
 
         # Request headers
         headers = {"Connection": "keep-alive",
@@ -87,18 +87,18 @@ class UiPath(object):
 
         # Request body
         body = {"grant_type": "refresh_token",
-                "client_id": self.__configuration.client_id,
-                "refresh_token": self.__configuration.refresh_token}
+                "client_id": self._configuration.client_id,
+                "refresh_token": self._configuration.refresh_token}
 
         # Request
-        response = self.__session.post(url=url_auth, json=body, headers=headers)  # , verify=True)
+        response = self._session.post(url=url_auth, json=body, headers=headers)  # , verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Return valid response
         if response.status_code == 200:
-            self.__configuration.token = json.loads(response.content.decode("utf-8"))["access_token"]
+            self._configuration.token = json.loads(response.content.decode("utf-8"))["access_token"]
 
     def _export_to_json(self, content: bytes, save_as: str | None) -> None:
         """
@@ -112,7 +112,7 @@ class UiPath(object):
             save_as (str): The file path where the JSON content will be saved. If None, the content will not be saved.
         """
         if save_as is not None:
-            self.__logger.info(msg="Exports response to JSON file.")
+            self._logger.info(msg="Exports response to JSON file.")
             with open(file=save_as, mode="wb") as file:
                 file.write(content)
     
@@ -141,8 +141,8 @@ class UiPath(object):
             # Deserialize json
             content_raw = response.json()["value"]
             # Pydantic v1
-            # return parse_obj_as(list[model], content_raw)
-            return [dict(data) for data in parse_obj_as(list[model], content_raw)]
+            return parse_obj_as(list[model], content_raw)
+            # return [dict(data) for data in parse_obj_as(list[model], content_raw)]
 
     # ASSETS
     def list_assets(self, fid: str, save_as: str | None = None) -> Response:
@@ -157,11 +157,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of assets.
         """
-        self.__logger.info(msg="Gets a list of all assets")
+        self._logger.info(msg="Gets a list of all assets")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -194,15 +194,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -226,11 +226,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of buckets.
         """
-        self.__logger.info(msg="Gets a list of all buckets")
+        self._logger.info(msg="Gets a list of all buckets")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -253,15 +253,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -285,12 +285,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Create bucket")
-        self.__logger.info(msg=name)
+        self._logger.info(msg="Create bucket")
+        self._logger.info(msg=name)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -317,14 +317,14 @@ class UiPath(object):
                 "Id": 0}
         
         # Request
-        response = self.__session.post(url=url_query, json=body, headers=headers, verify=True)
+        response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
         
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         content = None
         if response.status_code == 201:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -342,14 +342,14 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Uploads file to bucket")
-        self.__logger.info(msg=id)
-        self.__logger.info(msg=localpath)
-        self.__logger.info(msg=remotepath)
+        self._logger.info(msg="Uploads file to bucket")
+        self._logger.info(msg=id)
+        self._logger.info(msg=localpath)
+        self._logger.info(msg=remotepath)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -360,10 +360,10 @@ class UiPath(object):
         url_query = fr"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.GetWriteUri?path={remotepath}&expiryInMinutes=0"
         
         # Request
-        response = self.__session.get(url=url_query, headers=headers, verify=True)
+        response = self._session.get(url=url_query, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
@@ -374,7 +374,7 @@ class UiPath(object):
             with open(file=localpath, mode="rb") as file:
                 # Upload file
                 headers = {"x-ms-blob-type": "BlockBlob"}
-                response = self.__session.put(url=uri, headers=headers, data=file, verify=True)
+                response = self._session.put(url=uri, headers=headers, data=file, verify=True)
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -390,12 +390,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Delete bucket file")
-        self.__logger.info(msg=filename)
+        self._logger.info(msg="Delete bucket file")
+        self._logger.info(msg=filename)
         
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -406,15 +406,15 @@ class UiPath(object):
         url_query = fr"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.DeleteFile?path={filename}"
 
         # Request
-        response = self.__session.delete(url=url_query, headers=headers, verify=True)
+        response = self._session.delete(url=url_query, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 204:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -431,11 +431,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of calendars.
         """
-        self.__logger.info(msg="Gets a list of all calendars")
+        self._logger.info(msg="Gets a list of all calendars")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -458,15 +458,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -489,11 +489,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of environments.
         """
-        self.__logger.info(msg="Gets a list of all environments")
+        self._logger.info(msg="Gets a list of all environments")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -516,15 +516,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -548,12 +548,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of jobs.
         """
-        self.__logger.info(msg="Gets a list of all jobs based on the applied filter")
-        self.__logger.info(msg=filter)
+        self._logger.info(msg="Gets a list of all jobs based on the applied filter")
+        self._logger.info(msg=filter)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -583,15 +583,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -613,13 +613,13 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Starts the job on a robot")
-        self.__logger.info(msg=process_key)
-        self.__logger.info(msg=robot_id)
+        self._logger.info(msg="Starts the job on a robot")
+        self._logger.info(msg=process_key)
+        self._logger.info(msg=robot_id)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -649,10 +649,10 @@ class UiPath(object):
                               "Source": "Manual"}}
 
         # Request
-        response = self.__session.post(url=url_query, json=body, headers=headers, verify=True)
+        response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         return self.Response(status_code=response.status_code, content=None)
 
@@ -667,12 +667,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Stops a job")
-        self.__logger.info(msg=id)
+        self._logger.info(msg="Stops a job")
+        self._logger.info(msg=id)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -686,15 +686,15 @@ class UiPath(object):
         body = {"strategy": "2"}
 
         # Request
-        response = self.__session.post(url=url_query, json=body, headers=headers, verify=True)
+        response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
             
         return self.Response(status_code=response.status_code, content=content)
 
@@ -711,11 +711,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of machines.
         """
-        self.__logger.info(msg="Gets a list of all machines")
+        self._logger.info(msg="Gets a list of all machines")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -751,15 +751,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -781,11 +781,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of processes.
         """
-        self.__logger.info(msg="Gets a list of all processes")
+        self._logger.info(msg="Gets a list of all processes")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -809,15 +809,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -840,11 +840,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of queues.
         """
-        self.__logger.info(msg="Gets a list of all queues")
+        self._logger.info(msg="Gets a list of all queues")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
         
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -866,15 +866,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -898,12 +898,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of queue items.
         """
-        self.__logger.info(msg="Gets a list of queue items using filter")
-        self.__logger.info(msg=filter)
+        self._logger.info(msg="Gets a list of queue items using filter")
+        self._logger.info(msg=filter)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -931,15 +931,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -962,12 +962,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the details of the queue item.
         """
-        self.__logger.info(msg="Gets queue item details from queue")
-        self.__logger.info(msg=id)
+        self._logger.info(msg="Gets queue item details from queue")
+        self._logger.info(msg=id)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -995,15 +995,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1036,13 +1036,13 @@ class UiPath(object):
             Response: A dataclass containing the status code and the response content.
         """
 
-        self.__logger.info(msg="Adds item to queue")
-        self.__logger.info(msg=queue)
-        self.__logger.info(msg=reference)
+        self._logger.info(msg="Adds item to queue")
+        self._logger.info(msg=queue)
+        self._logger.info(msg=reference)
         
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1074,19 +1074,19 @@ class UiPath(object):
 
         # Request
         # .encode("utf-8")
-        response = self.__session.post(url=url_query, json=body, headers=headers, params=params, verify=True)
+        response = self._session.post(url=url_query, json=body, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Unique reference violation
         if response.status_code == 409:
-            self.__logger.warning(f"Item with reference {reference} already in the queue")
+            self._logger.warning(f"Item with reference {reference} already in the queue")
 
         # Output
         content = None
         if response.status_code == 201:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1112,12 +1112,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Updates queue item in the queue")
-        self.__logger.info(msg=queue)
+        self._logger.info(msg="Updates queue item in the queue")
+        self._logger.info(msg=queue)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1138,15 +1138,15 @@ class UiPath(object):
         # Request
         # do not remove encode: data=body.encode("utf-8")
         # test in the future the body: dict and data=json.dumps(body)
-        response = self.__session.put(url=url_query, json=body, headers=headers, verify=True)
+        response = self._session.put(url=url_query, json=body, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1161,12 +1161,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self.__logger.info(msg="Deletes queue item")
-        self.__logger.info(msg=id)
+        self._logger.info(msg="Deletes queue item")
+        self._logger.info(msg=id)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1177,15 +1177,15 @@ class UiPath(object):
         url_query = fr"{url_base}/odata/QueueItems({id})"
 
         # Request
-        response = self.__session.delete(url=url_query, headers=headers, verify=True)
+        response = self._session.delete(url=url_query, headers=headers, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 204:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1202,11 +1202,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of releases.
         """
-        self.__logger.info(msg="Gets list of releases")
+        self._logger.info(msg="Gets list of releases")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1230,15 +1230,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1261,12 +1261,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the process key information.
         """
-        self.__logger.info(msg="Gets the process key")
-        self.__logger.info(msg=name)
+        self._logger.info(msg="Gets the process key")
+        self._logger.info(msg=name)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1286,15 +1286,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list), "$filter": f"ProcessKey eq '{name}'"}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
         print(response.content)
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1317,11 +1317,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of robots.
         """
-        self.__logger.info(msg="Gets a list of all robots")
+        self._logger.info(msg="Gets a list of all robots")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1346,15 +1346,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1381,11 +1381,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of robot logs.
         """
-        self.__logger.info(msg="Gets a list of robot logs")
+        self._logger.info(msg="Gets a list of robot logs")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1420,15 +1420,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1451,12 +1451,12 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the robot ID information.
         """
-        self.__logger.info(msg="Gets the robot id")
-        self.__logger.info(msg=name)
+        self._logger.info(msg="Gets the robot id")
+        self._logger.info(msg=name)
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1476,16 +1476,16 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list), "$filter": f"Name eq '{name}'", "$top": 1}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
         print(response.content)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1507,11 +1507,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of roles.
         """
-        self.__logger.info(msg="Gets a list of all roles")
+        self._logger.info(msg="Gets a list of all roles")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1533,16 +1533,16 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
         print(response.content)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1565,11 +1565,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of schedules.
         """
-        self.__logger.info(msg="Gets a list of all schedules")
+        self._logger.info(msg="Gets a list of all schedules")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1596,15 +1596,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
@@ -1627,11 +1627,11 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the list of sessions.
         """
-        self.__logger.info(msg="Gets a list of all sessions")
+        self._logger.info(msg="Gets a list of all sessions")
 
         # Configuration
-        token = self.__configuration.token
-        url_base = self.__configuration.url_base
+        token = self._configuration.token
+        url_base = self._configuration.url_base
 
         # Request headers
         headers = {"Content-Type": "application/json",
@@ -1658,15 +1658,15 @@ class UiPath(object):
         params = {"$select": ",".join(alias_list)}
 
         # Request
-        response = self.__session.get(url=url_query, headers=headers, params=params, verify=True)
+        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
 
         # Log response code
-        self.__logger.info(msg=f"HTTP Status Code {response.status_code}")
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
         # Output
         content = None
         if response.status_code == 200:
-            self.__logger.info(msg="Request successful")
+            self._logger.info(msg="Request successful")
 
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
