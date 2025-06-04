@@ -113,10 +113,6 @@ if response.status_code == 200:
 ```
 
 ```python
- # (UNDER DEVELOPMENT)
- # list_releases for key: 
- # - example: 0543e060-52e0-411b-9d57-34b752aa00af
- # - id: 585503
 response = uipath.start_job(fid=fid, 
                             robot_id="123", 
                             process_key="Process_A")
