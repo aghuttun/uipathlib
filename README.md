@@ -24,12 +24,11 @@ import uipathlib
 url_base = "https://cloud.uipath.com/mycompany/production/orchestrator_"
 client_id = "ABX"
 refresh_token = "ABD"
-fid = "12"
-bucket_id = "123"
+fid = "12"  # Folder ID (Ogranization ID)
 
-uipath = UiPath(url_base=url_base,
-                client_id=client_id,
-                refresh_token=refresh_token)
+uipath = uipathlib.UiPath(url_base=url_base,
+                          client_id=client_id,
+                          refresh_token=refresh_token)
 ```
 
 ```python
@@ -37,7 +36,7 @@ uipath = UiPath(url_base=url_base,
 response = uipath.list_assets(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -45,32 +44,44 @@ if response.status_code == 200:
 response = uipath.list_buckets(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
 response = uipath.create_bucket(fid=fid,
-                                name="Test 5",
-                                identifier="a1111111-dc1c-1111-111c-111c11ef1111",
-                                description="Test description 5")
-print(response.status_code)
+                                name="Test 1",
+                                guid="f7ea20e9-971b-4c23-9979-321178a68c46",
+                                description="Test description 1")
+if response.status_code == 201:
+    print("Bucket created successfully")
+```
+
+```python
+bid = "69248"  # bucked id example
+response = uipath.delete_bucket(fid=fid, id=bid)
+if response.status_code == 204:
+    print("Bucket deleted successfully")
 ```
 
 ```python
 # UPLOAD
+bid = "69243"  # bucked id example
 response = uipath.upload_bucket_file(fid=fid,
-                                     id=bucket_id, 
-                                     localpath=r"C:\Users\admin\Desktop\My bucket 3.txt", 
-                                     remotepath=r"My bucket 3.txt")
-print(response.status_code)
+                                     id=bid,
+                                     localpath=r"C:\Users\admin\Desktop\my_bucket_demo.txt",
+                                     remotepath=r"my_bucket_demo.txt")
+if response.status_code in [200, 201]:
+    print("File uploaded successfully")
 ```
 
 ```python
 # DELETE
+bid = "69243"  # bucked id example
 response = uipath.delete_bucket_file(fid=fid,
-                                     id=bucket_id, 
-                                     filename=r"My bucket 3.txt")
-print(response.status_code)
+                                     id=bid, 
+                                     filename=r"my_bucket_demo.txt")
+if response.status_code == 204:
+    print("File deleted successfully")
 ```
 
 ```python
@@ -78,7 +89,7 @@ print(response.status_code)
 response = uipath.list_calendars(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -86,18 +97,26 @@ if response.status_code == 200:
 response = uipath.list_environments(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
 # JOBS
+# Filter examples:
+# - "State eq 'Running'"
+# - "State eq 'Successful' and ReleaseName eq 'ReleaseNameOrProcessName'"
+# - "ReleaseName eq 'ReleaseNameOrProcessName'"
 response = uipath.list_jobs(fid=fid, filter="State eq 'Running'")
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
+ # (UNDER DEVELOPMENT)
+ # list_releases for key: 
+ # - example: 0543e060-52e0-411b-9d57-34b752aa00af
+ # - id: 585503
 response = uipath.start_job(fid=fid, 
                             robot_id="123", 
                             process_key="Process_A")
@@ -118,7 +137,7 @@ if response.status_code == 200:
 response = uipath.list_processes(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -126,19 +145,19 @@ if response.status_code == 200:
 response = uipath.list_queues(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
 response = uipath.list_queue_items(fid=fid, 
-                                   filter="QueueDefinitionId eq 275435")
+                                   filter="QueueDefinitionId eq 241096")
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
     print(df)
 ```
 
 ```python
-queue_item_id = "836491474"
+queue_item_id = 913233204  # example queue item id
 response = uipath.get_queue_item(fid=fid,
                                  id=queue_item_id)
 if response.status_code == 200:
@@ -146,13 +165,14 @@ if response.status_code == 200:
 ```
 
 ```python
+queue_name = "RPA_1201_..."  # queue name example
 response = uipath.add_queue_item(fid=fid,
-                                 queue="Queue_A",
-                                 content={"EmployeeId": "12345",
-                                          "RowId": "566829607423876",
-                                          "State": "Approved",
-                                          "RequestId": "LR00001",
-                                          "Language": "English"},
+                                 queue=queue_name,
+                                 data={"EmployeeId": "12345",
+                                       "RowId": "566829607423876",
+                                       "State": "Approved",
+                                       "RequestId": "LR00001",
+                                       "Language": "English"},
                                  reference="12345",
                                  priority="Normal")
 if response.status_code == 201:
@@ -160,25 +180,26 @@ if response.status_code == 201:
 ```
 
 ```python
-queue_item_id = "870192396"
+queue_name = "RPA_1201_..."  # queue name example
+queue_item_id = 913233204  # example queue item id
 response = uipath.update_queue_item(fid=fid,
-                                    queue="Queue_A",
+                                    queue=queue_name,
                                     id=queue_item_id,
-                                    content={"EmployeeId": "12345",
-                                             "RowId": "566829607423876",
-                                             "State": "Approved",
-                                             "RequestId": "LR00001",
-                                             "Language": "12345"})
+                                    data={"EmployeeId": "54321",
+                                          "RowId": "566829607423876",
+                                          "State": "Approved",
+                                          "RequestId": "LR20001",
+                                          "Language": "English"})
 if response.status_code == 200:
-    print("Done")
+    print("Queue item updated successfully")
 ```
 
 ```python
-queue_item_id = "870192396"
+queue_item_id = 913233204  # example queue item id
 response = uipath.delete_queue_item(fid=fid,
                                     id=queue_item_id)
 if response.status_code == 204:
-    print("Done")
+    print("Queue item deleted successfully")
 ```
 
 ```python
@@ -186,25 +207,15 @@ if response.status_code == 204:
 response = uipath.list_releases(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
-```
-
-```python
-# UNDER DEVELOPMENT!
-get_release_process_key = "Queue_A"
-response = uipath.get_release_process_key(fid=fid,
-                                          name=get_release_process_key)
-if response.status_code == 200:
-    print(response.content)
+    display(df)  # print(df)
 ```
 
 ```python
 # ROBOTS
-fid = "1138051"
 response = uipath.list_robots(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -215,18 +226,11 @@ if response.status_code == 200:
 ```
 
 ```python
-# UNDER DEVELOPMENT!
-response = uipath.get_robot_id(fid=fid, name="ABC")
-if response.status_code == 200:
-    print(response.content)
-```
-
-```python
 # ROLES
 response = uipath.list_roles()
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -234,7 +238,7 @@ if response.status_code == 200:
 response = uipath.list_schedules(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
@@ -242,7 +246,7 @@ if response.status_code == 200:
 response = uipath.list_sessions(fid=fid)
 if response.status_code == 200:
     df = pd.DataFrame([item.dict() for item in response.content])
-    print(df)
+    display(df)  # print(df)
 ```
 
 ## Installation

@@ -207,7 +207,7 @@ class UiPath(object):
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
 
-            # Deserialize json (scalar values)
+            # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
@@ -266,12 +266,12 @@ class UiPath(object):
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
 
-            # Deserialize json (scalar values)
+            # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
-    def create_bucket(self, fid: str, name: str, identifier: str, description: str | None = None) -> Response:
+    def create_bucket(self, fid: str, name: str, guid: str, description: str | None = None) -> Response:
         """
         Creates a new Storage Bucket in UiPath Orchestrator.
         GUID generator: https://www.guidgenerator.com/online-guid-generator.aspx
@@ -279,7 +279,7 @@ class UiPath(object):
         Args:
             fid (str): The folder ID for the organization unit.
             name (str): The name of the Storage Bucket.
-            identifier (str): The unique identifier (GUID) for the Storage Bucket.
+            guid (str): The unique identifier (GUID) for the Storage Bucket.
             description (str, optional): A description for the Storage Bucket. Defaults to None.
 
         Returns:
@@ -306,7 +306,7 @@ class UiPath(object):
         # Body
         body = {"Name": name,
                 "Description": description,
-                "Identifier": identifier,
+                "Identifier": guid,
                 "StorageProvider": None,
                 "StorageParameters": None,
                 "StorageContainer": None,
@@ -324,6 +324,47 @@ class UiPath(object):
 
         content = None
         if response.status_code == 201:
+            self._logger.info(msg="Request successful")
+
+        return self.Response(status_code=response.status_code, content=content)
+
+    def delete_bucket(self, fid: str, id: str) -> Response:
+        """
+        Deletes a Storage Bucket from UiPath Orchestrator.
+
+        Args:
+            fid (str): The folder ID for the organization unit.
+            id (str): The ID of the Storage Bucket to delete.
+
+        Returns:
+            Response: A dataclass containing the status code and the response content.
+        """
+        self._logger.info(msg="Deletes storage bucket")
+        self._logger.info(msg=id)
+
+        # Configuration
+        token = self._configuration.token
+        url_base = self._configuration.url_base
+
+        # Request headers
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid
+        }
+
+        # Request query
+        url_query = fr"{url_base}/odata/Buckets({id})"
+
+        # Request
+        response = self._session.delete(url=url_query, headers=headers, verify=True)
+
+        # Log response code
+        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
+
+        # Output
+        content = None
+        if response.status_code == 204:
             self._logger.info(msg="Request successful")
 
         return self.Response(status_code=response.status_code, content=content)
@@ -375,6 +416,10 @@ class UiPath(object):
                 # Upload file
                 headers = {"x-ms-blob-type": "BlockBlob"}
                 response = self._session.put(url=uri, headers=headers, data=file, verify=True)
+                
+                # Successful upload
+                if response.status_code == 200:
+                    self._logger.info(msg="File uploaded successfully")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -471,7 +516,7 @@ class UiPath(object):
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
 
-            # Deserialize json (scalar values)
+            # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
@@ -529,7 +574,7 @@ class UiPath(object):
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
 
-            # Deserialize json (scalar values)
+            # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
@@ -542,7 +587,8 @@ class UiPath(object):
 
         Args:
             fid (str): The folder ID for the organization unit.
-            filter (str): Condition to be used. Example: State eq 'Running'.
+            filter (str): Condition to be used.
+                           Example: State eq 'Running'.
             save_as (str, optional): Name of the JSON file that contains the request response.
 
         Returns:
@@ -596,7 +642,7 @@ class UiPath(object):
             # Export response to json file
             self._export_to_json(content=response.content, save_as=save_as)
 
-            # Deserialize json (scalar values)
+            # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
@@ -798,6 +844,8 @@ class UiPath(object):
         # Pydantic output data structure
         class DataStructure(BaseModel):
             id: str = Field(alias="Id")
+            title: str = Field(alias="Title")
+            key: str = Field(alias="Key")
             version: str = Field(alias="Version")
             published: datetime = Field(alias="Published")
             authors: str = Field(alias="Authors")
@@ -955,7 +1003,7 @@ class UiPath(object):
 
         Args:
             fid (str): The folder ID for the organization unit.
-            id (int): The ID of the queue item to retrieve.
+            id (int): The ID of the queue item to retrieve (transaction ID).
             save_as (str, optional): The file path where the JSON content will be saved. 
                                      If None, the content will not be saved.
 
@@ -1156,7 +1204,7 @@ class UiPath(object):
 
         Args:
             fid (str): The folder ID for the organization unit.
-            id (int): The ID of the queue item to delete.
+            id (int): The ID of the queue item to delete (transaction ID).
 
         Returns:
             Response: A dataclass containing the status code and the response content.
@@ -1246,62 +1294,6 @@ class UiPath(object):
             # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
-        return self.Response(status_code=response.status_code, content=content)
-
-    def get_release_process_key(self, fid: str, name: str, save_as: str | None = None) -> Response:
-        """
-        Retrieves the process key for a given process name from the UiPath Orchestrator.
-
-        Args:
-            fid (str): The folder ID for the organization unit.
-            name (str): The name of the UiPath Orchestrator process.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
-
-        Returns:
-            Response: A dataclass containing the status code and the process key information.
-        """
-        self._logger.info(msg="Gets the process key")
-        self._logger.info(msg=name)
-
-        # Configuration
-        token = self._configuration.token
-        url_base = self._configuration.url_base
-
-        # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
-
-        # Request query
-        url_query = fr"{url_base}/odata/Releases"
-
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            key: str = Field(alias="Key")
-
-        # Query parameters
-        # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
-        params = {"$select": ",".join(alias_list), "$filter": f"ProcessKey eq '{name}'"}
-
-        # Request
-        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
-        print(response.content)
-        # Log response code
-        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
-
-        # Output
-        content = None
-        if response.status_code == 200:
-            self._logger.info(msg="Request successful")
-
-            # Export response to json file
-            self._export_to_json(content=response.content, save_as=save_as)
-
-            # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
-        
         return self.Response(status_code=response.status_code, content=content)
 
     # ROBOTS
@@ -1436,63 +1428,6 @@ class UiPath(object):
             # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
-        return self.Response(status_code=response.status_code, content=content)
-
-    def get_robot_id(self, fid: str, name: str, save_as: str | None = None) -> Response:
-        """
-        Retrieves the ID of a robot by its name from the UiPath Orchestrator.
-
-        Args:
-            fid (str): The folder ID for the organization unit.
-            name (str): The name of the UiPath Orchestrator robot.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
-
-        Returns:
-            Response: A dataclass containing the status code and the robot ID information.
-        """
-        self._logger.info(msg="Gets the robot id")
-        self._logger.info(msg=name)
-
-        # Configuration
-        token = self._configuration.token
-        url_base = self._configuration.url_base
-
-        # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
-
-        # Request query
-        url_query = fr"{url_base}/odata/Robots"
-
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: str = Field(alias="Id")
-
-        # Query parameters
-        # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
-        params = {"$select": ",".join(alias_list), "$filter": f"Name eq '{name}'", "$top": 1}
-
-        # Request
-        response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
-        print(response.content)
-
-        # Log response code
-        self._logger.info(msg=f"HTTP Status Code {response.status_code}")
-
-        # Output
-        content = None
-        if response.status_code == 200:
-            self._logger.info(msg="Request successful")
-
-            # Export response to json file
-            self._export_to_json(content=response.content, save_as=save_as)
-
-            # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
-        
         return self.Response(status_code=response.status_code, content=content)
 
     # ROLES
