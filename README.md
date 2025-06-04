@@ -113,9 +113,11 @@ if response.status_code == 200:
 ```
 
 ```python
-response = uipath.start_job(fid=fid, 
-                            robot_id="123", 
-                            process_key="Process_A")
+process_key = "ead3e825-7817-426d-8b1d-3991e6eb2809"  # example process key
+robot_id = None  # None for default robot, or specify robot ID
+response = uipath.start_job(fid=fid,
+                            process_key=process_key,
+                            robot_id=robot_id)
 if response.status_code == 201:
     print(response.content)
 ```

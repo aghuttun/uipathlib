@@ -647,19 +647,19 @@ class UiPath(object):
 
         return self.Response(status_code=response.status_code, content=content)
 
-    def start_job(self, fid: str, robot_id: int, process_key: str) -> Response:
+    def start_job(self, fid: str, process_key: str, robot_id: int | None = None) -> Response:
         """
         Starts a job using a process key and a robot id.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            robot_id (int): Robot ID code.
-            process_key (str): Process key.
+            process_key (str): Process key. list_releases function, column KEY.
+            robot_id (int, optional): Robot ID code or runs the job on all robots if None.
 
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Starts the job on a robot")
+        self._logger.info(msg="Starts the job")
         self._logger.info(msg=process_key)
         self._logger.info(msg=robot_id)
 
@@ -688,14 +688,21 @@ class UiPath(object):
         #                to any available robots.
         #  * All - The process will run once on all robots.
         # Source: Manual, Time Trigger, Agent, Queue Trigger
-        body = {"startInfo": {"ReleaseKey": process_key,
-                              "Strategy": "Specific",
-                              "RobotIds": [robot_id],
-                              "JobsCount": 0,
-                              "Source": "Manual"}}
-
+        if robot_id is not None:
+            body = {"startInfo": {"ReleaseKey": process_key,
+                                  "Strategy": "Specific",
+                                  "RobotIds": [robot_id],
+                                  "JobsCount": 0,
+                                  "Source": "Manual"}}
+        else:
+            body = {"startInfo": {"ReleaseKey": process_key,
+                                  "Strategy": "JobsCount",
+                                  "JobsCount": 1,
+                                  "Source": "Manual"}}
+        
         # Request
         response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
+        # print(response.content)
 
         # Log response code
         self._logger.info(msg=f"HTTP Status Code {response.status_code}")
@@ -844,7 +851,7 @@ class UiPath(object):
         # Pydantic output data structure
         class DataStructure(BaseModel):
             id: str = Field(alias="Id")
-            title: str = Field(alias="Title")
+            # title: str = Field(alias="Title")
             key: str = Field(alias="Key")
             version: str = Field(alias="Version")
             published: datetime = Field(alias="Published")
