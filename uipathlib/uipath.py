@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field, parse_obj_as, validator
 import requests
 from typing import Any, Type
 
+# Creates a logger for this module
+logger = logging.getLogger(__name__)
 
 class UiPath(object):
     @dataclasses.dataclass
@@ -25,7 +27,7 @@ class UiPath(object):
         status_code: int
         content: Any = None
 
-    def __init__(self, url_base: str, client_id: str, refresh_token: str) -> None:
+    def __init__(self, url_base: str, client_id: str, refresh_token: str, logger: logging.Logger | None = None) -> None:
         """
         Initializes the UiPath Cloud client with the provided credentials and configuration.
 
@@ -33,12 +35,11 @@ class UiPath(object):
             url_base (str): The base URL for the UiPath Orchestrator API.
             client_id (str): The client ID for authentication.
             refresh_token (str): The refresh token for authentication.
+            logger (logging.Logger, optional): Logger instance to use. If None, a default logger is created.
         """
         # Init logging
-        self._logger = logging.getLogger(name=__name__)
-        self._logger.setLevel(level=logging.INFO)
-        handler = logging.StreamHandler()
-        self._logger.addHandler(handler)
+        # Use provided logger or create a default one
+        self._logger = logger or logging.getLogger(name=__name__)
 
         # Init variables
         self._session: requests.Session = requests.Session()
