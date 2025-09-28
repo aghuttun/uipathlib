@@ -22,13 +22,14 @@ class UiPath(object):
         client_id: str | None = None
         refresh_token: str | None = None
         token: str | None = None
+        scope: str | None = None
 
     @dataclasses.dataclass
     class Response:
         status_code: int
         content: Any = None
 
-    def __init__(self, url_base: str, client_id: str, refresh_token: str, logger: logging.Logger | None = None) -> None:
+    def __init__(self, url_base: str, client_id: str, refresh_token: str, scope: str, logger: logging.Logger | None = None) -> None:
         """
         Initializes the UiPath Cloud client with the provided credentials and configuration.
 
@@ -36,6 +37,7 @@ class UiPath(object):
             url_base (str): The base URL for the UiPath Orchestrator API.
             client_id (str): The client ID for authentication.
             refresh_token (str): The refresh token for authentication.
+            scope (str): The scope for the authentication.
             logger (logging.Logger, optional): Logger instance to use. If None, a default logger is created.
         """
         # Init logging
@@ -49,7 +51,8 @@ class UiPath(object):
         self._configuration = self.Configuration(url_base=url_base,
                                                   client_id=client_id,
                                                   refresh_token=refresh_token,
-                                                  token=None)
+                                                  token=None,
+                                                  scope=scope)
 
         # Authenticate
         self.auth()
@@ -81,19 +84,34 @@ class UiPath(object):
         self._logger.info(msg="Authentication")
 
         # Request headers
+        # headers = {"Connection": "keep-alive",
+        #            "Content-Type": "application/json"}
         headers = {"Connection": "keep-alive",
-                   "Content-Type": "application/json"}
+                   "Content-Type": "application/x-www-form-urlencoded"}
 
         # Authorization URL
-        url_auth = "https://account.uipath.com/oauth/token"
+        # url_auth = "https://account.uipath.com/oauth/token"
+        url_auth = "https://cloud.uipath.com/adidas/identity_/connect/token"
 
         # Request body
-        body = {"grant_type": "refresh_token",
+        # body = {"grant_type": "refresh_token",
+        #         "client_id": self._configuration.client_id,
+        #         "refresh_token": self._configuration.refresh_token}
+
+        # Personal Access Tokens
+        # body = "grant_type=client_credentials&" \
+        #         f"client_id={self._configuration.client_id}&" \
+        #         f"client_secret={self._configuration.refresh_token}&" \
+        #         f"scope={self._configuration.scope}"
+
+        body = {"grant_type": "client_credentials",
                 "client_id": self._configuration.client_id,
-                "refresh_token": self._configuration.refresh_token}
+                "client_secret": self._configuration.refresh_token,
+                "scope": self._configuration.scope}
 
         # Request
-        response = self._session.post(url=url_auth, json=body, headers=headers)  # , verify=True)
+        # response = self._session.post(url=url_auth, json=body, headers=headers)  # , verify=True)
+        response = self._session.post(url=url_auth, data=body, headers=headers)
 
         # Log response code
         self._logger.info(msg=f"HTTP Status Code {response.status_code}")
@@ -118,33 +136,37 @@ class UiPath(object):
             with open(file=save_as, mode="wb") as file:
                 file.write(content)
     
-    def _handle_response(self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar") -> BaseModel | list[BaseModel]:
+    def _handle_response(self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar") -> dict | list[dict]:
         """
-        Handles the response from an API request and deserializes the JSON content.
+        Handles and deserializes the JSON content from an API response.
 
         This method processes the response from an API request and deserializes the JSON content
-        that contains a single instance of a Pydantic BaseModel (scalar) or a list of instances (list).
+        into a Pydantic BaseModel or a list of BaseModel instances, depending on the response type.
 
         Args:
             response (requests.Response): The response object from the API request.
-            model (BaseModel): The Pydantic BaseModel class to use for deserialization and validation.
-            rtype (str, optional): The type of response to handle. Options are "scalar" for a single record
+            model (Type[BaseModel]): The Pydantic BaseModel class to use for deserialization and validation.
+            rtype (str, optional): The type of response to handle. Use "scalar" for a single record
                                    and "list" for a list of records. Defaults to "scalar".
 
         Returns:
-            BaseModel | list[BaseModel]: The deserialized content as a Pydantic BaseModel instance or a list of instances.
+            dict or list[dict]: The deserialized content as a dictionary (for scalar) or a list of dictionaries (for list).
         """
         if rtype.lower() == "scalar": 
             # Deserialize json (scalar values)
             content_raw = response.json()
-            # Pydantic v1
-            return model(**content_raw)
+            # Pydantic v1 validation
+            validated = model(**content_raw)
+            # Convert to dict
+            return validated.dict()
         else:
             # Deserialize json
             content_raw = response.json()["value"]
-            # Pydantic v1
-            return parse_obj_as(list[model], content_raw)
+            # Pydantic v1 validation
+            validated_list = parse_obj_as(list[model], content_raw)
             # return [dict(data) for data in parse_obj_as(list[model], content_raw)]
+            # Convert to a list of dicts
+            return [item.dict() for item in validated_list]
 
     # ASSETS
     def list_assets(self, fid: str, save_as: str | None = None) -> Response:

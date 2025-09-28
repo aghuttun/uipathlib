@@ -21,21 +21,23 @@ from a script:
 ```python
 import uipathlib
 
-url_base = "https://cloud.uipath.com/mycompany/production/orchestrator_"
+url_base = "https://cloud.uipath.com/my_company/Production/orchestrator_/"
 client_id = "ABX"
 refresh_token = "ABD"
-fid = "12"  # Folder ID (Ogranization ID)
+scope = "OR.Folders.Read OR.Jobs OR.Queues OR.Execution.Read OR.Robots.Read OR.Settings.Read"
+fid = "1138055"  # Folder ID (Organization ID)
 
 uipath = uipathlib.UiPath(url_base=url_base,
                           client_id=client_id,
-                          refresh_token=refresh_token)
+                          refresh_token=refresh_token,
+                          scope=scope)
 ```
 
 ```python
 # ASSETS
 response = uipath.list_assets(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -43,7 +45,7 @@ if response.status_code == 200:
 # BUCKETS
 response = uipath.list_buckets(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -88,7 +90,7 @@ if response.status_code == 204:
 # CALENDARS
 response = uipath.list_calendars(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -96,7 +98,7 @@ if response.status_code == 200:
 # ENVIRONMENTS (UNDER DEVELOPMENT)
 response = uipath.list_environments(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -108,7 +110,7 @@ if response.status_code == 200:
 # - "ReleaseName eq 'ReleaseNameOrProcessName'"
 response = uipath.list_jobs(fid=fid, filter="State eq 'Running'")
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -126,7 +128,7 @@ if response.status_code == 201:
 # MACHINES
 response = uipath.list_machines(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     print(df)
 ```
 
@@ -134,7 +136,7 @@ if response.status_code == 200:
 # PROCESSES
 response = uipath.list_processes(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -142,7 +144,7 @@ if response.status_code == 200:
 # QUEUES
 response = uipath.list_queues(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -150,7 +152,7 @@ if response.status_code == 200:
 response = uipath.list_queue_items(fid=fid, 
                                    filter="QueueDefinitionId eq 241096")
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     print(df)
 ```
 
@@ -204,7 +206,7 @@ if response.status_code == 204:
 # RELEASES
 response = uipath.list_releases(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -212,14 +214,14 @@ if response.status_code == 200:
 # ROBOTS
 response = uipath.list_robots(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
 ```python
 response = uipath.list_robot_logs(fid=fid, filter="JobKey eq a111d111-b111-1f11-b11d-111adac1111d")
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     print(df)
 ```
 
@@ -227,7 +229,7 @@ if response.status_code == 200:
 # ROLES
 response = uipath.list_roles()
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -235,7 +237,7 @@ if response.status_code == 200:
 # SCHEDULES
 response = uipath.list_schedules(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
@@ -243,7 +245,7 @@ if response.status_code == 200:
 # SESSIONS
 response = uipath.list_sessions(fid=fid)
 if response.status_code == 200:
-    df = pd.DataFrame([item.dict() for item in response.content])
+    df = pd.DataFrame(response.content)
     display(df)  # print(df)
 ```
 
