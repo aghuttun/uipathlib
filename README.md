@@ -150,18 +150,19 @@ if response.status_code == 200:
 
 ```python
 response = uipath.list_queue_items(fid=fid, 
-                                   filter="QueueDefinitionId eq 241096")
+                                   filter="QueueDefinitionId eq 317460")
 if response.status_code == 200:
     df = pd.DataFrame(response.content)
-    print(df)
+    display(df)  # print(df)
 ```
 
 ```python
-queue_item_id = 913233204  # example queue item id
+queue_item_id = 1125058579  # example queue item id
 response = uipath.get_queue_item(fid=fid,
                                  id=queue_item_id)
 if response.status_code == 200:
-    print(response.content)
+    df = pd.DataFrame([response.content])
+    display(df)  # print(df)
 ```
 
 ```python
