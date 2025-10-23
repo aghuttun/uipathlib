@@ -7,17 +7,23 @@ import dataclasses
 from datetime import datetime
 import json
 import logging
+from typing import Any, Type
 from pydantic import BaseModel, Field, parse_obj_as, validator
 import requests
-from typing import Any, Type
 
 # Creates a logger for this module
 logger = logging.getLogger(__name__)
 
 
 class UiPath(object):
+    """
+    UiPath client to interact with UiPath Orchestrator via API.
+    """
+
     @dataclasses.dataclass
     class Configuration:
+        """Configuration dataclass for UiPath client."""
+
         url_base: str | None = None
         client_id: str | None = None
         refresh_token: str | None = None
@@ -26,33 +32,44 @@ class UiPath(object):
 
     @dataclasses.dataclass
     class Response:
+        """Response dataclass for UiPath client methods."""
+
         status_code: int
         content: Any = None
 
-    def __init__(self, url_base: str, client_id: str, refresh_token: str, scope: str, logger: logging.Logger | None = None) -> None:
+    def __init__(
+        self,
+        url_base: str,
+        client_id: str,
+        refresh_token: str,
+        scope: str,
+        custom_logger: logging.Logger | None = None,
+    ) -> None:
         """
-        Initializes the UiPath Cloud client with the provided credentials and configuration.
+        Initialize the UiPath Cloud client with the provided credentials and configuration.
 
         Args:
             url_base (str): The base URL for the UiPath Orchestrator API.
             client_id (str): The client ID for authentication.
             refresh_token (str): The refresh token for authentication.
             scope (str): The scope for the authentication.
-            logger (logging.Logger, optional): Logger instance to use. If None, a default logger is created.
+            custom_logger (logging.Logger, optional): Logger instance to use. If None, a default logger is created.
         """
         # Init logging
         # Use provided logger or create a default one
-        self._logger = logger or logging.getLogger(name=__name__)
+        self._logger = custom_logger or logging.getLogger(name=__name__)
 
         # Init variables
         self._session: requests.Session = requests.Session()
 
         # Credentials/Configuration
-        self._configuration = self.Configuration(url_base=url_base,
-                                                  client_id=client_id,
-                                                  refresh_token=refresh_token,
-                                                  token=None,
-                                                  scope=scope)
+        self._configuration = self.Configuration(
+            url_base=url_base,
+            client_id=client_id,
+            refresh_token=refresh_token,
+            token=None,
+            scope=scope,
+        )
 
         # Authenticate
         self.auth()
@@ -66,7 +83,7 @@ class UiPath(object):
 
     def is_auth(self) -> bool:
         """
-        Checks whether authentication was successful.
+        Check whether authentication was successful.
 
         Returns:
             bool: If true, then authentication was successful.
@@ -77,17 +94,19 @@ class UiPath(object):
     def auth(self) -> None:
         """
         Authentication.
-        This method performs the authentication process to obtain an access token
-        using the client credentials flow. The token is stored in the Configuration
-        dataclass for subsequent API requests.
+
+        This method performs the authentication process to obtain an access token using the client credentials flow. The
+        token is stored in the Configuration dataclass for subsequent API requests.
         """
         self._logger.info(msg="Authentication")
 
         # Request headers
         # headers = {"Connection": "keep-alive",
         #            "Content-Type": "application/json"}
-        headers = {"Connection": "keep-alive",
-                   "Content-Type": "application/x-www-form-urlencoded"}
+        headers = {
+            "Connection": "keep-alive",
+            "Content-Type": "application/x-www-form-urlencoded",
+        }
 
         # Authorization URL
         # url_auth = "https://account.uipath.com/oauth/token"
@@ -104,13 +123,14 @@ class UiPath(object):
         #         f"client_secret={self._configuration.refresh_token}&" \
         #         f"scope={self._configuration.scope}"
 
-        body = {"grant_type": "client_credentials",
-                "client_id": self._configuration.client_id,
-                "client_secret": self._configuration.refresh_token,
-                "scope": self._configuration.scope}
+        body = {
+            "grant_type": "client_credentials",
+            "client_id": self._configuration.client_id,
+            "client_secret": self._configuration.refresh_token,
+            "scope": self._configuration.scope,
+        }
 
         # Request
-        # response = self._session.post(url=url_auth, json=body, headers=headers)  # , verify=True)
         response = self._session.post(url=url_auth, data=body, headers=headers)
 
         # Log response code
@@ -124,8 +144,8 @@ class UiPath(object):
         """
         Export response content to a JSON file.
 
-        This method takes the content to be exported and saves it to a specified file in JSON format.
-        If the `save_as` parameter is provided, the content will be written to that file.
+        This method takes the content to be exported and saves it to a specified file in JSON format. If the `save_as`
+        parameter is provided, the content will be written to that file.
 
         Args:
             content (bytes): The content to be exported, typically the response content from an API call.
@@ -135,24 +155,26 @@ class UiPath(object):
             self._logger.info(msg="Exports response to JSON file.")
             with open(file=save_as, mode="wb") as file:
                 file.write(content)
-    
-    def _handle_response(self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar") -> dict | list[dict]:
-        """
-        Handles and deserializes the JSON content from an API response.
 
-        This method processes the response from an API request and deserializes the JSON content
-        into a Pydantic BaseModel or a list of BaseModel instances, depending on the response type.
+    def _handle_response(
+        self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar"
+    ) -> dict | list[dict]:
+        """
+        Handle and deserializes the JSON content from an API response.
+
+        This method processes the response from an API request and deserializes the JSON content into a Pydantic
+        BaseModel or a list of BaseModel instances, depending on the response type.
 
         Args:
             response (requests.Response): The response object from the API request.
             model (Type[BaseModel]): The Pydantic BaseModel class to use for deserialization and validation.
-            rtype (str, optional): The type of response to handle. Use "scalar" for a single record
-                                   and "list" for a list of records. Defaults to "scalar".
+            rtype (str, optional): The type of response to handle. Use "scalar" for a single record and "list" for a
+              list of records. Defaults to "scalar".
 
         Returns:
-            dict or list[dict]: The deserialized content as a dictionary (for scalar) or a list of dictionaries (for list).
+            dict or list[dict]: The deserialized content as a dictionary (scalar) or a list of dictionaries (list).
         """
-        if rtype.lower() == "scalar": 
+        if rtype.lower() == "scalar":
             # Deserialize json (scalar values)
             content_raw = response.json()
             # Pydantic v1 validation
@@ -171,12 +193,12 @@ class UiPath(object):
     # ASSETS
     def list_assets(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all assets from the UiPath Orchestrator.
+        Retrieve a list of all assets from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of assets.
@@ -188,12 +210,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Assets"
+        url_query = rf"{url_base}/odata/Assets"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -240,12 +264,13 @@ class UiPath(object):
     def list_buckets(self, fid: str, save_as: str | None = None) -> Response:
         """
         Buckets - Get all.
-        Gets the UiPath Orchestrator buckets.
+
+        Get the UiPath Orchestrator buckets.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of buckets.
@@ -257,12 +282,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Buckets"
+        url_query = rf"{url_base}/odata/Buckets"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -270,7 +297,7 @@ class UiPath(object):
             identifier: str = Field(alias="Identifier")
             name: str = Field(alias="Name")
             description: str | None = Field(alias="Description", default=None)
-        
+
         # Query parameters
         # Pydantic v1
         alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
@@ -297,7 +324,8 @@ class UiPath(object):
 
     def create_bucket(self, fid: str, name: str, guid: str, description: str | None = None) -> Response:
         """
-        Creates a new Storage Bucket in UiPath Orchestrator.
+        Create a new Storage Bucket in UiPath Orchestrator.
+
         GUID generator: https://www.guidgenerator.com/online-guid-generator.aspx
 
         Args:
@@ -317,32 +345,36 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
-        
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
+
         # Description
         description = "" if description is None else description
 
         # Request query
-        url_query = fr"{url_base}/odata/Buckets"
+        url_query = rf"{url_base}/odata/Buckets"
 
         # Body
-        body = {"Name": name,
-                "Description": description,
-                "Identifier": guid,
-                "StorageProvider": None,
-                "StorageParameters": None,
-                "StorageContainer": None,
-                "CredentialStoreId": None,
-                "ExternalName": None,
-                "Password": None,
-                "FoldersCount": 0,
-                "Id": 0}
-        
+        body = {
+            "Name": name,
+            "Description": description,
+            "Identifier": guid,
+            "StorageProvider": None,
+            "StorageParameters": None,
+            "StorageContainer": None,
+            "CredentialStoreId": None,
+            "ExternalName": None,
+            "Password": None,
+            "FoldersCount": 0,
+            "Id": 0,
+        }
+
         # Request
         response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
-        
+
         # Log response code
         self._logger.info(msg=f"HTTP Status Code {response.status_code}")
 
@@ -354,7 +386,7 @@ class UiPath(object):
 
     def delete_bucket(self, fid: str, id: str) -> Response:
         """
-        Deletes a Storage Bucket from UiPath Orchestrator.
+        Delete a Storage Bucket from UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -374,11 +406,11 @@ class UiPath(object):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {token}",
-            "X-UIPATH-OrganizationUnitID": fid
+            "X-UIPATH-OrganizationUnitID": fid,
         }
 
         # Request query
-        url_query = fr"{url_base}/odata/Buckets({id})"
+        url_query = rf"{url_base}/odata/Buckets({id})"
 
         # Request
         response = self._session.delete(url=url_query, headers=headers, verify=True)
@@ -395,7 +427,7 @@ class UiPath(object):
 
     def upload_bucket_file(self, fid: str, id: str, localpath: str, remotepath: str) -> Response:
         """
-        Uploads a file to a Storage Bucket.
+        Upload a file to a Storage Bucket.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -417,13 +449,15 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.GetWriteUri?path={remotepath}&expiryInMinutes=0"
-        
+        url_query = rf"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.GetWriteUri?path={remotepath}&expiryInMinutes=0"
+
         # Request
         response = self._session.get(url=url_query, headers=headers, verify=True)
 
@@ -440,7 +474,7 @@ class UiPath(object):
                 # Upload file
                 headers = {"x-ms-blob-type": "BlockBlob"}
                 response = self._session.put(url=uri, headers=headers, data=file, verify=True)
-                
+
                 # Successful upload
                 if response.status_code == 200:
                     self._logger.info(msg="File uploaded successfully")
@@ -449,7 +483,7 @@ class UiPath(object):
 
     def delete_bucket_file(self, fid: str, id: str, filename: str) -> Response:
         """
-        Deletes a file from a Storage Bucket.
+        Delete a file from a Storage Bucket.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -461,18 +495,20 @@ class UiPath(object):
         """
         self._logger.info(msg="Delete bucket file")
         self._logger.info(msg=filename)
-        
+
         # Configuration
         token = self._configuration.token
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.DeleteFile?path={filename}"
+        url_query = rf"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.DeleteFile?path={filename}"
 
         # Request
         response = self._session.delete(url=url_query, headers=headers, verify=True)
@@ -490,12 +526,12 @@ class UiPath(object):
     # CALENDARS
     def list_calendars(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Gets the UiPath Orchestrator calendars.
+        Get the UiPath Orchestrator calendars.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of calendars.
@@ -507,12 +543,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Calendars"
+        url_query = rf"{url_base}/odata/Calendars"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -548,12 +586,12 @@ class UiPath(object):
     # ENVIRONMENTS
     def list_environments(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Gets the UiPath Orchestrator environments.
+        Get the UiPath Orchestrator environments.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of environments.
@@ -565,12 +603,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Environments"
+        url_query = rf"{url_base}/odata/Environments"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -606,13 +646,13 @@ class UiPath(object):
     # JOBS
     def list_jobs(self, fid: str, filter: str, save_as: str | None = None) -> Response:
         """
-        Gets UiPath Orchestrator jobs.
+        Get UiPath Orchestrator jobs.
+
         Filter use connetion: https://www.odata.org/documentation/odata-version-2-0/uri-conventions/
 
         Args:
             fid (str): The folder ID for the organization unit.
-            filter (str): Condition to be used.
-                           Example: State eq 'Running'.
+            filter (str): Condition to be used. Example: State eq 'Running'.
             save_as (str, optional): Name of the JSON file that contains the request response.
 
         Returns:
@@ -626,12 +666,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Jobs"
+        url_query = rf"{url_base}/odata/Jobs"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -673,7 +715,7 @@ class UiPath(object):
 
     def start_job(self, fid: str, process_key: str, robot_id: int | None = None) -> Response:
         """
-        Starts a job using a process key and a robot id.
+        Start a job using a process key and a robot id.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -692,12 +734,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Jobs/UiPath.Server.Configuration.OData.StartJobs"
+        url_query = rf"{url_base}/odata/Jobs/UiPath.Server.Configuration.OData.StartJobs"
 
         # Body
         # case-sensitive
@@ -713,17 +757,25 @@ class UiPath(object):
         #  * All - The process will run once on all robots.
         # Source: Manual, Time Trigger, Agent, Queue Trigger
         if robot_id is not None:
-            body = {"startInfo": {"ReleaseKey": process_key,
-                                  "Strategy": "Specific",
-                                  "RobotIds": [robot_id],
-                                  "JobsCount": 0,
-                                  "Source": "Manual"}}
+            body = {
+                "startInfo": {
+                    "ReleaseKey": process_key,
+                    "Strategy": "Specific",
+                    "RobotIds": [robot_id],
+                    "JobsCount": 0,
+                    "Source": "Manual",
+                }
+            }
         else:
-            body = {"startInfo": {"ReleaseKey": process_key,
-                                  "Strategy": "JobsCount",
-                                  "JobsCount": 1,
-                                  "Source": "Manual"}}
-        
+            body = {
+                "startInfo": {
+                    "ReleaseKey": process_key,
+                    "Strategy": "JobsCount",
+                    "JobsCount": 1,
+                    "Source": "Manual",
+                }
+            }
+
         # Request
         response = self._session.post(url=url_query, json=body, headers=headers, verify=True)
         # print(response.content)
@@ -735,7 +787,7 @@ class UiPath(object):
 
     def stop_job(self, fid: str, id: str) -> Response:
         """
-        Stops a job using a job id.
+        Stop a job using a job id.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -752,12 +804,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Jobs({id})/UiPath.Server.Configuration.OData.StopJob"
+        url_query = rf"{url_base}/odata/Jobs({id})/UiPath.Server.Configuration.OData.StopJob"
 
         # Body
         body = {"strategy": "2"}
@@ -772,14 +826,15 @@ class UiPath(object):
         content = None
         if response.status_code == 200:
             self._logger.info(msg="Request successful")
-            
+
         return self.Response(status_code=response.status_code, content=content)
 
     # MACHINES
     def list_machines(self, fid: str, save_as: str | None = None) -> Response:
         """
         Machines - Get all.
-        Gets the machines from the UiPath Orchestrator.
+
+        Get the machines from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -795,12 +850,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Machines"
+        url_query = rf"{url_base}/odata/Machines"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -818,7 +875,11 @@ class UiPath(object):
             def extract_robot_version(cls, value):
                 # if len(value) > 0:
                 #     return value[0]["Version"]
-                if isinstance(value, list) and len(value) > 0 and isinstance(value[0], dict):
+                if (
+                    isinstance(value, list)
+                    and len(value) > 0
+                    and isinstance(value[0], dict)
+                ):
                     return value[0].get("Version")
                 return None
 
@@ -849,7 +910,7 @@ class UiPath(object):
     # PROCESSES
     def list_processes(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Gets UiPath Orchestrator processes.
+        Get UiPath Orchestrator processes.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -865,12 +926,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Processes"
+        url_query = rf"{url_base}/odata/Processes"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -909,12 +972,12 @@ class UiPath(object):
     # QUEUES
     def list_queues(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves all queues from the UiPath Orchestrator.
+        Retrieve all queues from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of queues.
@@ -924,14 +987,16 @@ class UiPath(object):
         # Configuration
         token = self._configuration.token
         url_base = self._configuration.url_base
-        
+
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/QueueDefinitions"
+        url_query = rf"{url_base}/odata/QueueDefinitions"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -965,14 +1030,14 @@ class UiPath(object):
 
     def list_queue_items(self, fid: str, filter: str, save_as: str | None = None) -> Response:
         """
-        Retrieves all queue items from the UiPath Orchestrator based on the specified filter.
+        Retrieve all queue items from the UiPath Orchestrator based on the specified filter.
 
         Args:
             fid (str): The folder ID for the organization unit.
             filter (str): The filter condition to select the queue and item status.
-                          Example: "QueueDefinitionId eq 1 and Status eq 'New'"
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+              Example: "QueueDefinitionId eq 1 and Status eq 'New'"
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of queue items.
@@ -985,12 +1050,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/QueueItems"
+        url_query = rf"{url_base}/odata/QueueItems"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1030,13 +1097,13 @@ class UiPath(object):
 
     def get_queue_item(self, fid: str, id: int, save_as: str | None = None) -> Response:
         """
-        Retrieves the details of a specific queue item from the UiPath Orchestrator.
+        Retrieve the details of a specific queue item from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
             id (int): The ID of the queue item to retrieve (transaction ID).
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the details of the queue item.
@@ -1049,12 +1116,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/QueueItems({id})"
+        url_query = rf"{url_base}/odata/QueueItems({id})"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1089,12 +1158,20 @@ class UiPath(object):
 
             # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
-        
+
         return self.Response(status_code=response.status_code, content=content)
 
-    def add_queue_item(self, fid: str, queue: str, data: dict, reference: str, priority: str = "Normal", save_as: str | None = None) -> Response:
+    def add_queue_item(
+        self,
+        fid: str,
+        queue: str,
+        data: dict,
+        reference: str,
+        priority: str = "Normal",
+        save_as: str | None = None,
+    ) -> Response:
         """
-        Adds an item to a UiPath Orchestrator queue.
+        Add an item to a UiPath Orchestrator queue.
 
         Example: add_queue_item(fid="123",
                                 queue="ElegibilityQueueNAM",
@@ -1108,8 +1185,8 @@ class UiPath(object):
             data (dict): A dictionary containing the item information.
             reference (str): A unique reference for the queue item.
             priority (str, optional): The priority of the queue item. Defaults to "Normal".
-            save_as (str, optional): The file path where the JSON content will be saved. 
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the response content.
@@ -1118,18 +1195,20 @@ class UiPath(object):
         self._logger.info(msg="Adds item to queue")
         self._logger.info(msg=queue)
         self._logger.info(msg=reference)
-        
+
         # Configuration
         token = self._configuration.token
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Queues/UiPathODataSvc.AddQueueItem"
+        url_query = rf"{url_base}/odata/Queues/UiPathODataSvc.AddQueueItem"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1144,12 +1223,16 @@ class UiPath(object):
 
         # Body
         # DueDate: null -> DueDate: None
-        body = {"itemData": {"Name": queue,
-                             "Priority": priority,  # Normal, High
-                             "DeferDate": None,
-                             "DueDate": None,
-                             "Reference": reference,
-                             "SpecificContent": data}}
+        body = {
+            "itemData": {
+                "Name": queue,
+                "Priority": priority,  # Normal, High
+                "DeferDate": None,
+                "DueDate": None,
+                "Reference": reference,
+                "SpecificContent": data,
+            }
+        }
 
         # Request
         # .encode("utf-8")
@@ -1172,12 +1255,12 @@ class UiPath(object):
 
             # Deserialize json
             content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
-        
+
         return self.Response(status_code=response.status_code, content=content)
 
     def update_queue_item(self, fid: str, queue: str, id: int, data: dict) -> Response:
         """
-        Updates an item in a UiPath Orchestrator queue.
+        Update an item in a UiPath Orchestrator queue.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -1199,20 +1282,24 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/QueueItems({id})"
+        url_query = rf"{url_base}/odata/QueueItems({id})"
 
         # Body
-        body = {"Name": queue,
-                "Priority": "High",
-                "SpecificContent": data,
-                "DeferDate": None,
-                "DueDate": None,
-                "RiskSlaDate": None}
+        body = {
+            "Name": queue,
+            "Priority": "High",
+            "SpecificContent": data,
+            "DeferDate": None,
+            "DueDate": None,
+            "RiskSlaDate": None,
+        }
 
         # Request
         # do not remove encode: data=body.encode("utf-8")
@@ -1231,7 +1318,7 @@ class UiPath(object):
 
     def delete_queue_item(self, fid: str, id: int) -> Response:
         """
-        Deletes an item from a UiPath Orchestrator queue.
+        Delete an item from a UiPath Orchestrator queue.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -1248,12 +1335,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/QueueItems({id})"
+        url_query = rf"{url_base}/odata/QueueItems({id})"
 
         # Request
         response = self._session.delete(url=url_query, headers=headers, verify=True)
@@ -1271,7 +1360,7 @@ class UiPath(object):
     # RELEASES
     def list_releases(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all process releases from the UiPath Orchestrator.
+        Retrieve a list of all process releases from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -1288,12 +1377,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Releases"
+        url_query = rf"{url_base}/odata/Releases"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1330,11 +1421,11 @@ class UiPath(object):
     # ROBOTS
     def list_robots(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all robots from the UiPath Orchestrator.
+        Retrieve a list of all robots from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. 
+            save_as (str, optional): The file path where the JSON content will be saved.
                                      If None, the content will not be saved.
 
         Returns:
@@ -1347,12 +1438,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Robots"
+        url_query = rf"{url_base}/odata/Robots"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1386,10 +1479,12 @@ class UiPath(object):
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
-    
-    def list_robot_logs(self, fid: str, filter: str, save_as: str | None = None) -> Response:
+
+    def list_robot_logs(
+        self, fid: str, filter: str, save_as: str | None = None
+    ) -> Response:
         """
-        Retrieves a list of robot logs from the UiPath Orchestrator.
+        Retrieve a list of robot logs from the UiPath Orchestrator.
 
         Example: get_robot_logs(fid="123",
                                 filter="JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'")
@@ -1397,9 +1492,9 @@ class UiPath(object):
         Args:
             fid (str): The folder ID for the organization unit.
             filter (str): The filter condition to apply to the API call.
-                          Example: "JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'"
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+              Example: "JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'"
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of robot logs.
@@ -1411,12 +1506,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/RobotLogs"
+        url_query = rf"{url_base}/odata/RobotLogs"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1464,11 +1561,11 @@ class UiPath(object):
     # ROLES
     def list_roles(self, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all roles from the UiPath Orchestrator.
+        Retrieve a list of all roles from the UiPath Orchestrator.
 
         Args:
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of roles.
@@ -1480,11 +1577,13 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}"}
- 
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+        }
+
         # Request query
-        url_query = fr"{url_base}/odata/Roles"
+        url_query = rf"{url_base}/odata/Roles"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1500,7 +1599,7 @@ class UiPath(object):
 
         # Request
         response = self._session.get(url=url_query, headers=headers, params=params, verify=True)
-        print(response.content)
+        # print(response.content)
 
         # Log response code
         self._logger.info(msg=f"HTTP Status Code {response.status_code}")
@@ -1521,12 +1620,12 @@ class UiPath(object):
     # SCHEDULES
     def list_schedules(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all schedules from the UiPath Orchestrator.
+        Retrieve a list of all schedules from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of schedules.
@@ -1538,12 +1637,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/ProcessSchedules"
+        url_query = rf"{url_base}/odata/ProcessSchedules"
 
         # pydantic output data structure
         class DataStructure(BaseModel):
@@ -1583,7 +1684,7 @@ class UiPath(object):
     # SESSIONS
     def list_sessions(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieves a list of all sessions from the UiPath Orchestrator.
+        Retrieve a list of all sessions from the UiPath Orchestrator.
 
         Args:
             fid (str): The folder ID for the organization unit.
@@ -1600,12 +1701,14 @@ class UiPath(object):
         url_base = self._configuration.url_base
 
         # Request headers
-        headers = {"Content-Type": "application/json",
-                   "Authorization": f"Bearer {token}",
-                   "X-UIPATH-OrganizationUnitID": fid}
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}",
+            "X-UIPATH-OrganizationUnitID": fid,
+        }
 
         # Request query
-        url_query = fr"{url_base}/odata/Sessions"
+        url_query = rf"{url_base}/odata/Sessions"
 
         # Pydantic output data structure
         class DataStructure(BaseModel):
@@ -1641,5 +1744,6 @@ class UiPath(object):
             content = self._handle_response(response=response, model=DataStructure, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
+
 
 # eom
