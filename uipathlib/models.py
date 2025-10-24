@@ -160,7 +160,7 @@ class ListRobots(BaseModel):
     """Pydantic data structure for list_robots()."""
 
     id: int = Field(alias="Id")
-    machine_name: str = Field(alias="MachineName")
+    machine_name: str | None = Field(alias="MachineName", default=None)
     name: str = Field(alias="Name")
     username: str = Field(alias="Username")
     type: str = Field(alias="Type")
