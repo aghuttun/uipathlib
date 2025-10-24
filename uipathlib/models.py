@@ -212,8 +212,8 @@ class ListSessions(BaseModel):
     machine_name: str = Field(alias="MachineName")
     state: str = Field(alias="State")
     reporting_time: str = Field(alias="ReportingTime")
-    organization_unit_id: str = Field(alias="OrganizationUnitId")
-    folder_name: str = Field(alias="FolderName")
+    organization_unit_id: str | None = Field(alias="OrganizationUnitId", default=None)
+    folder_name: str | None = Field(alias="FolderName", default=None)
 
 
 # eom
