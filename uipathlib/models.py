@@ -207,9 +207,9 @@ class ListSessions(BaseModel):
     """Pydantic data structure for list_sessions()."""
 
     id: int = Field(alias="Id")
-    machine_id: str = Field(alias="MachineId")
+    machine_id: str | None = Field(alias="MachineId", default=None)
     host_machine_name: str = Field(alias="HostMachineName")
-    machine_name: str = Field(alias="MachineName")
+    machine_name: str | None = Field(alias="MachineName", default=None)
     state: str = Field(alias="State")
     reporting_time: str = Field(alias="ReportingTime")
     organization_unit_id: str | None = Field(alias="OrganizationUnitId", default=None)
