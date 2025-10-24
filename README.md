@@ -252,7 +252,7 @@ if response.status_code == 200:
 
 ```python
 # Close
-del(outlooklib)
+del(uipathlib)
 ```
 
 ## Installation
