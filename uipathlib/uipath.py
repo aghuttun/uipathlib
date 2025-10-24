@@ -4,12 +4,30 @@ This library provides a Python client for interacting with the UiPath Orchestrat
 
 # import base64
 import dataclasses
-from datetime import datetime
 import json
 import logging
 from typing import Any, Type
-from pydantic import BaseModel, Field, parse_obj_as, validator
 import requests
+from pydantic import BaseModel, parse_obj_as
+from .models import (
+    ListAssets,
+    ListBuckets,
+    ListCalendars,
+    ListEnvironments,
+    ListJobs,
+    ListMachines,
+    ListProcesses,
+    ListQueues,
+    ListQueueItems,
+    GetQueueItem,
+    AddQueueItem,
+    ListReleases,
+    ListRobots,
+    ListRobotLogs,
+    ListRoles,
+    ListSchedules,
+    ListSessions,
+)
 
 # Creates a logger for this module
 logger = logging.getLogger(__name__)
@@ -219,26 +237,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Assets"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            external_name: str | None = Field(alias="ExternalName", default=None)
-            has_default_value: bool = Field(alias="HasDefaultValue")
-            value: str = Field(alias="Value")
-            value_scope: str = Field(alias="ValueScope")
-            value_type: str = Field(alias="ValueType")
-            int_value: int = Field(alias="IntValue")
-            string_value: str = Field(alias="StringValue")
-            bool_value: bool = Field(alias="BoolValue")
-            credential_username: str = Field(alias="CredentialUsername")
-            credential_store_id: int | None = Field(alias="CredentialStoreId", default=None)
-            can_be_deleted: bool = Field(alias="CanBeDeleted")
-            description: str | None = Field(alias="Description", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListAssets.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -256,7 +257,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListAssets, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -291,16 +292,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Buckets"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            identifier: str = Field(alias="Identifier")
-            name: str = Field(alias="Name")
-            description: str | None = Field(alias="Description", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListBuckets.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -318,7 +312,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListBuckets, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -456,7 +450,8 @@ class UiPath(object):
         }
 
         # Request query
-        url_query = rf"{url_base}/odata/Buckets({id})/UiPath.Server.Configuration.OData.GetWriteUri?path={remotepath}&expiryInMinutes=0"
+        server_conf = "UiPath.Server.Configuration.OData"
+        url_query = rf"{url_base}/odata/Buckets({id})/{server_conf}.GetWriteUri?path={remotepath}&expiryInMinutes=0"
 
         # Request
         response = self._session.get(url=url_query, headers=headers, verify=True)
@@ -552,16 +547,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Calendars"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            excluded_dates: list = Field(alias="ExcludedDates")
-            time_zone_id: str | None = Field(alias="TimeZoneId", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListCalendars.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -579,7 +567,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListCalendars, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -612,16 +600,13 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Environments"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            type: str = Field(alias="Type")
-            description: str | None = Field(alias="Description", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [
+            field.alias
+            for field in ListEnvironments.__fields__.values()
+            if field.field_info.alias is not None
+        ]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -639,7 +624,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListEnvironments, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -675,23 +660,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Jobs"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            key: str = Field(alias="Key")
-            release_name: str = Field(alias="ReleaseName")
-            host_machine_name: str | None = Field(alias="HostMachineName", default=None)
-            type: str = Field(alias="Type")
-            starting_schedule_id: int | None = Field(alias="StartingScheduleId", default=None)
-            creation_time: datetime | None = Field(alias="CreationTime", default=None)
-            start_time: datetime | None = Field(alias="StartTime", default=None)
-            end_time: datetime | None = Field(alias="EndTime", default=None)
-            state: str = Field(alias="State")
-            source: str = Field(alias="Source")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListJobs.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
@@ -709,7 +680,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListJobs, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -859,33 +830,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Machines"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            description: str | None = Field(alias="Description", default=None)
-            type: str = Field(alias="Type")
-            non_production_slots: int = Field(alias="NonProductionSlots")
-            unattended_slots: int = Field(alias="UnattendedSlots")
-            robot_versions: str | None = Field(alias="RobotVersions", default=None)
-
-            # @field_validator("RobotVersions", mode="before")
-            # @classmethod
-            @validator("robot_versions", pre=True)
-            def extract_robot_version(cls, value):
-                # if len(value) > 0:
-                #     return value[0]["Version"]
-                if (
-                    isinstance(value, list)
-                    and len(value) > 0
-                    and isinstance(value[0], dict)
-                ):
-                    return value[0].get("Version")
-                return None
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListMachines.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -903,7 +850,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListMachines, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -935,19 +882,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Processes"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: str = Field(alias="Id")
-            # title: str = Field(alias="Title")
-            key: str = Field(alias="Key")
-            version: str = Field(alias="Version")
-            published: datetime = Field(alias="Published")
-            authors: str = Field(alias="Authors")
-            description: str | None = Field(alias="Description", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListProcesses.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -965,7 +902,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListProcesses, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -998,15 +935,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/QueueDefinitions"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            description: str | None = Field(alias="Description", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListQueues.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1024,7 +955,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListQueues, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1059,21 +990,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/QueueItems"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            queue_definition_id: int = Field(alias="QueueDefinitionId")
-            status: str = Field(alias="Status")
-            reference: str = Field(alias="Reference")
-            creation_time: datetime = Field(alias="CreationTime")
-            start_processing: datetime | None = Field(alias="StartProcessing", default=None)
-            end_processing: datetime | None = Field(alias="EndProcessing", default=None)
-            retry_number: int = Field(alias="RetryNumber")
-            specific_data: str = Field(alias="SpecificData")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListQueueItems.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
@@ -1091,7 +1010,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListQueueItems, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1125,21 +1044,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/QueueItems({id})"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            queue_definition_id: int = Field(alias="QueueDefinitionId")
-            status: str = Field(alias="Status")
-            reference: str = Field(alias="Reference")
-            creation_time: datetime = Field(alias="CreationTime")
-            start_processing: datetime | None = Field(alias="StartProcessing", default=None)
-            end_processing: datetime | None = Field(alias="EndProcessing", default=None)
-            retry_number: int = Field(alias="RetryNumber")
-            specific_data: str = Field(alias="SpecificData")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in GetQueueItem.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1157,7 +1064,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
+            content = self._handle_response(response=response, model=GetQueueItem, rtype="scalar")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1191,7 +1098,6 @@ class UiPath(object):
         Returns:
             Response: A dataclass containing the status code and the response content.
         """
-
         self._logger.info(msg="Adds item to queue")
         self._logger.info(msg=queue)
         self._logger.info(msg=reference)
@@ -1210,15 +1116,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Queues/UiPathODataSvc.AddQueueItem"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            organization_unit_id: int = Field(alias="OrganizationUnitId")
-            queue_definition_id: int = Field(alias="QueueDefinitionId")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in AddQueueItem.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Body
@@ -1254,7 +1154,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="scalar")
+            content = self._handle_response(response=response, model=AddQueueItem, rtype="scalar")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1364,8 +1264,8 @@ class UiPath(object):
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of releases.
@@ -1386,17 +1286,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Releases"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            key: str = Field(alias="Key")
-            process_key: str = Field(alias="ProcessKey")
-            process_version: str = Field(alias="ProcessVersion")
-            environment_id: str | None = Field(alias="EnvironmentId", default=None)
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListReleases.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1414,7 +1306,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListReleases, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1425,8 +1317,8 @@ class UiPath(object):
 
         Args:
             fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
+              be saved.
 
         Returns:
             Response: A dataclass containing the status code and the list of robots.
@@ -1447,18 +1339,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Robots"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            machine_name: str = Field(alias="MachineName")
-            name: str = Field(alias="Name")
-            username: str = Field(alias="Username")
-            type: str = Field(alias="Type")
-            robot_environments: str = Field(alias="RobotEnvironments")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListRobots.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1476,13 +1359,11 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListRobots, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
-    def list_robot_logs(
-        self, fid: str, filter: str, save_as: str | None = None
-    ) -> Response:
+    def list_robot_logs(self, fid: str, filter: str, save_as: str | None = None) -> Response:
         """
         Retrieve a list of robot logs from the UiPath Orchestrator.
 
@@ -1515,18 +1396,6 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/RobotLogs"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            job_key: str = Field(alias="JobKey")
-            level: str = Field(alias="Level")
-            windows_identity: str = Field(alias="WindowsIdentity")
-            process_name: str = Field(alias="ProcessName")
-            time_stamp: str = Field(alias="TimeStamp")
-            message: str = Field(alias="Message")
-            robot_name: str = Field(alias="RobotName")
-            Machine_id: int = Field(alias="MachineId")
-
         # Query parameters
         # Pydantic v1
         # ?$top=10
@@ -1536,7 +1405,7 @@ class UiPath(object):
         # ?$filter=Level eq UiPath.Core.Enums.LogLevel%27Fatal%27
         # ?$filter=TimeStamp gt 2021-10-12T00:00:00.000Z and Level eq 'Error' or Level eq 'Fatal'
         # ?$filter=JobKey eq 98f59394-45e7-4da6-a695-50c70f4d87e3
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListRobotLogs.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list), "$filter": filter}
 
         # Request
@@ -1554,7 +1423,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListRobotLogs, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1585,16 +1454,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Roles"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            display_name: str = Field(alias="DisplayName")
-            type: str = Field(alias="Type")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListRoles.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1613,7 +1475,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListRoles, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1646,20 +1508,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/ProcessSchedules"
 
-        # pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            name: str = Field(alias="Name")
-            package_name: str = Field(alias="PackageName")
-            environment_id: str | None = Field(alias="EnvironmentId", default=None)
-            environment_name: str | None = Field(alias="EnvironmentName", default=None)
-            start_process_cron: str = Field(alias="StartProcessCron")
-            start_process_cron_summary: str = Field(alias="StartProcessCronSummary")
-            enabled: bool = Field(alias="Enabled")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListSchedules.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1677,7 +1528,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListSchedules, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
@@ -1710,20 +1561,9 @@ class UiPath(object):
         # Request query
         url_query = rf"{url_base}/odata/Sessions"
 
-        # Pydantic output data structure
-        class DataStructure(BaseModel):
-            id: int = Field(alias="Id")
-            machine_id: str = Field(alias="MachineId")
-            host_machine_name: str = Field(alias="HostMachineName")
-            machine_name: str = Field(alias="MachineName")
-            state: str = Field(alias="State")
-            reporting_time: str = Field(alias="ReportingTime")
-            organization_unit_id: str = Field(alias="OrganizationUnitId")
-            folder_name: str = Field(alias="FolderName")
-
         # Query parameters
         # Pydantic v1
-        alias_list = [field.alias for field in DataStructure.__fields__.values() if field.field_info.alias is not None]
+        alias_list = [field.alias for field in ListSessions.__fields__.values() if field.field_info.alias is not None]
         params = {"$select": ",".join(alias_list)}
 
         # Request
@@ -1741,7 +1581,7 @@ class UiPath(object):
             self._export_to_json(content=response.content, save_as=save_as)
 
             # Deserialize json
-            content = self._handle_response(response=response, model=DataStructure, rtype="list")
+            content = self._handle_response(response=response, model=ListSessions, rtype="list")
 
         return self.Response(status_code=response.status_code, content=content)
 
