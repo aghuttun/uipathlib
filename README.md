@@ -250,6 +250,11 @@ if response.status_code == 200:
     display(df)  # print(df)
 ```
 
+```python
+# Close
+del(outlooklib)
+```
+
 ## Installation
 
 * [uipathlib](#uipathlib)
