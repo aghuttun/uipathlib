@@ -199,14 +199,15 @@ class UiPath(object):
             validated = model(**content_raw)
             # Convert to dict
             return validated.dict()
-        else:
-            # Deserialize json
-            content_raw = response.json()["value"]
-            # Pydantic v1 validation
-            validated_list = parse_obj_as(list[model], content_raw)
-            # return [dict(data) for data in parse_obj_as(list[model], content_raw)]
-            # Convert to a list of dicts
-            return [item.dict() for item in validated_list]
+
+        # List of records
+        # Deserialize json
+        content_raw = response.json()["value"]
+        # Pydantic v1 validation
+        validated_list = parse_obj_as(list[model], content_raw)
+        # return [dict(data) for data in parse_obj_as(list[model], content_raw)]
+        # Convert to a list of dicts
+        return [item.dict() for item in validated_list]
 
     # ASSETS
     def list_assets(self, fid: str, save_as: str | None = None) -> Response:
