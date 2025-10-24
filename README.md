@@ -252,7 +252,7 @@ if response.status_code == 200:
 
 ```python
 # Close
-del(uipathlib)
+del(uipath)
 ```
 
 ## Installation
