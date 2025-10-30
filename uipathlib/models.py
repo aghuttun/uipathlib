@@ -1,5 +1,16 @@
 """
-Pydantic data structures for SharePoint entities.
+Define Pydantic data structures for UiPath Orchestrator entities.
+
+This module provides Pydantic models for various UiPath Orchestrator-related entities, including assets, buckets,
+calendars, environments, jobs, machines, processes, queues, queue items, releases, robots, robot logs, roles, schedules,
+and sessions.
+Use these models to validate and serialize data exchanged with UiPath Orchestrator APIs.
+
+Notes
+-----
+- All models use field aliases to match UiPath Orchestrator API field names.
+- Some fields are optional and default to None if not provided.
+- Validators are included where necessary to transform or extract data.
 """
 
 from datetime import datetime
@@ -7,7 +18,44 @@ from pydantic import BaseModel, Field, validator
 
 
 class ListAssets(BaseModel):
-    """Pydantic data structure for list_assets()."""
+    """
+    Define the data structure for list_assets() responses.
+
+    Specify fields for UiPath Orchestrator asset metadata, including identifiers, names, external names, default value
+    status, values, value scopes, value types, integer values, string values, boolean values, credential usernames,
+    credential store IDs, deletability, and descriptions.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the asset.
+    name : str
+        Specify the name of the asset.
+    external_name : str, optional
+        Specify the external name of the asset, if available.
+    has_default_value : bool
+        Indicate whether the asset has a default value.
+    value : str
+        Specify the value of the asset.
+    value_scope : str
+        Specify the scope of the asset value.
+    value_type : str
+        Specify the type of the asset value.
+    int_value : int
+        Specify the integer value of the asset.
+    string_value : str
+        Specify the string value of the asset.
+    bool_value : bool
+        Indicate the boolean value of the asset.
+    credential_username : str
+        Specify the username for credential assets.
+    credential_store_id : int, optional
+        Specify the credential store ID, if applicable.
+    can_be_deleted : bool
+        Indicate whether the asset can be deleted.
+    description : str, optional
+        Specify the description of the asset.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -26,7 +74,22 @@ class ListAssets(BaseModel):
 
 
 class ListBuckets(BaseModel):
-    """Pydantic data structure for list_buckets()."""
+    """
+    Define the data structure for list_buckets() responses.
+
+    Specify fields for UiPath Orchestrator bucket metadata, including identifiers, names, and descriptions.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the bucket.
+    identifier : str
+        Specify the unique string identifier of the bucket.
+    name : str
+        Specify the name of the bucket.
+    description : str, optional
+        Specify the description of the bucket, if available.
+    """
 
     id: int = Field(alias="Id")
     identifier: str = Field(alias="Identifier")
@@ -35,7 +98,23 @@ class ListBuckets(BaseModel):
 
 
 class ListCalendars(BaseModel):
-    """Pydantic data structure for list_calendars()."""
+    """
+    Define the data structure for list_calendars() responses.
+
+    Specify fields for UiPath Orchestrator calendar metadata, including identifiers, names, excluded dates, and time
+    zone IDs.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the calendar.
+    name : str
+        Specify the name of the calendar.
+    excluded_dates : list
+        List the dates excluded from the calendar.
+    time_zone_id : str, optional
+        Specify the time zone ID of the calendar, if available.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -44,7 +123,22 @@ class ListCalendars(BaseModel):
 
 
 class ListEnvironments(BaseModel):
-    """Pydantic data structure for list_environments()."""
+    """
+    Define the data structure for list_environments() responses.
+
+    Specify fields for UiPath Orchestrator environment metadata, including identifiers, names, types, and descriptions.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the environment.
+    name : str
+        Specify the name of the environment.
+    type : str
+        Specify the type of the environment.
+    description : str, optional
+        Specify the description of the environment, if available.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -53,7 +147,37 @@ class ListEnvironments(BaseModel):
 
 
 class ListJobs(BaseModel):
-    """Pydantic data structure for list_jobs()."""
+    """
+    Define the data structure for list_jobs() responses.
+
+    Specify fields for UiPath Orchestrator job metadata, including identifiers, keys, release names, host machine names,
+    types, starting schedule IDs, creation times, start times, end times, states, and sources.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the job.
+    key : str
+        Specify the unique key of the job.
+    release_name : str
+        Specify the name of the release associated with the job.
+    host_machine_name : str, optional
+        Specify the name of the host machine, if available.
+    type : str
+        Specify the type of the job.
+    starting_schedule_id : int, optional
+        Specify the starting schedule ID, if applicable.
+    creation_time : datetime, optional
+        Specify the creation time of the job, if available.
+    start_time : datetime, optional
+        Specify the start time of the job, if available.
+    end_time : datetime, optional
+        Specify the end time of the job, if available.
+    state : str
+        Specify the current state of the job.
+    source : str
+        Specify the source of the job.
+    """
 
     id: int = Field(alias="Id")
     key: str = Field(alias="Key")
@@ -69,7 +193,29 @@ class ListJobs(BaseModel):
 
 
 class ListMachines(BaseModel):
-    """Pydantic data structure for list_machines()."""
+    """
+    Define the data structure for list_machines() responses.
+
+    Specify fields for UiPath Orchestrator machine metadata, including identifiers, names, descriptions, types,
+    non-production slots, unattended slots, and robot versions.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the machine.
+    name : str
+        Specify the name of the machine.
+    description : str, optional
+        Specify the description of the machine, if available.
+    type : str
+        Specify the type of the machine.
+    non_production_slots : int
+        Specify the number of non-production slots for the machine.
+    unattended_slots : int
+        Specify the number of unattended slots for the machine.
+    robot_versions : str, optional
+        Specify the robot version for the machine, if available.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -91,7 +237,27 @@ class ListMachines(BaseModel):
 
 
 class ListProcesses(BaseModel):
-    """Pydantic data structure for list_processes()."""
+    """
+    Define the data structure for list_processes() responses.
+
+    Specify fields for UiPath Orchestrator process metadata, including identifiers, keys, versions, published dates,
+    authors, and descriptions.
+
+    Parameters
+    ----------
+    id : str
+        Specify the unique identifier of the process.
+    key : str
+        Specify the unique key of the process.
+    version : str
+        Specify the version of the process.
+    published : datetime
+        Specify the published date of the process.
+    authors : str
+        Specify the authors of the process.
+    description : str, optional
+        Specify the description of the process, if available.
+    """
 
     id: str = Field(alias="Id")
     # title: str = Field(alias="Title")
@@ -103,7 +269,20 @@ class ListProcesses(BaseModel):
 
 
 class ListQueues(BaseModel):
-    """Pydantic data structure for list_queues()."""
+    """
+    Define the data structure for list_queues() responses.
+
+    Specify fields for UiPath Orchestrator queue metadata, including identifiers, names, and descriptions.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the queue.
+    name : str
+        Specify the name of the queue.
+    description : str, optional
+        Specify the description of the queue, if available.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -111,7 +290,33 @@ class ListQueues(BaseModel):
 
 
 class ListQueueItems(BaseModel):
-    """Pydantic data structure for list_queue_items()."""
+    """
+    Define the data structure for list_queue_items() responses.
+
+    Specify fields for UiPath Orchestrator queue item metadata, including identifiers, queue definition IDs, statuses,
+    references, creation times, processing start and end times, retry numbers, and specific data.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the queue item.
+    queue_definition_id : int
+        Specify the unique identifier of the queue definition.
+    status : str
+        Specify the status of the queue item.
+    reference : str
+        Specify the reference associated with the queue item.
+    creation_time : datetime
+        Specify the creation time of the queue item.
+    start_processing : datetime, optional
+        Specify the time when processing started, if available.
+    end_processing : datetime, optional
+        Specify the time when processing ended, if available.
+    retry_number : int
+        Specify the retry number for the queue item.
+    specific_data : str
+        Specify the specific data associated with the queue item.
+    """
 
     id: int = Field(alias="Id")
     queue_definition_id: int = Field(alias="QueueDefinitionId")
@@ -125,7 +330,33 @@ class ListQueueItems(BaseModel):
 
 
 class GetQueueItem(BaseModel):
-    """Pydantic data structure for get_queue_item()."""
+    """
+    Define the data structure for get_queue_item() responses.
+
+    Specify fields for UiPath Orchestrator queue item metadata, including identifiers, queue definition IDs, statuses,
+    references, creation times, processing start and end times, retry numbers, and specific data.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the queue item.
+    queue_definition_id : int
+        Specify the unique identifier of the queue definition.
+    status : str
+        Specify the status of the queue item.
+    reference : str
+        Specify the reference associated with the queue item.
+    creation_time : datetime
+        Specify the creation time of the queue item.
+    start_processing : datetime, optional
+        Specify the time when processing started, if available.
+    end_processing : datetime, optional
+        Specify the time when processing ended, if available.
+    retry_number : int
+        Specify the retry number for the queue item.
+    specific_data : str
+        Specify the specific data associated with the queue item.
+    """
 
     id: int = Field(alias="Id")
     queue_definition_id: int = Field(alias="QueueDefinitionId")
@@ -139,7 +370,21 @@ class GetQueueItem(BaseModel):
 
 
 class AddQueueItem(BaseModel):
-    """Pydantic data structure for add_queue_item()."""
+    """
+    Define the data structure for add_queue_item() responses.
+
+    Specify fields for UiPath Orchestrator queue item creation metadata, including identifiers, organization unit IDs,
+    and queue definition IDs.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the queue item.
+    organization_unit_id : int
+        Specify the unique identifier of the organization unit.
+    queue_definition_id : int
+        Specify the unique identifier of the queue definition.
+    """
 
     id: int = Field(alias="Id")
     organization_unit_id: int = Field(alias="OrganizationUnitId")
@@ -147,7 +392,25 @@ class AddQueueItem(BaseModel):
 
 
 class ListReleases(BaseModel):
-    """Pydantic data structure for list_releases()."""
+    """
+    Define the data structure for list_releases() responses.
+
+    Specify fields for UiPath Orchestrator release metadata, including identifiers, keys, process keys, process
+    versions, and environment IDs.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the release.
+    key : str
+        Specify the unique key of the release.
+    process_key : str
+        Specify the unique key of the process.
+    process_version : str
+        Specify the version of the process.
+    environment_id : str, optional
+        Specify the environment ID associated with the release, if available.
+    """
 
     id: int = Field(alias="Id")
     key: str = Field(alias="Key")
@@ -157,7 +420,27 @@ class ListReleases(BaseModel):
 
 
 class ListRobots(BaseModel):
-    """Pydantic data structure for list_robots()."""
+    """
+    Define the data structure for list_robots() responses.
+
+    Specify fields for UiPath Orchestrator robot metadata, including identifiers, machine names, names, usernames,
+    types, and robot environments.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the robot.
+    machine_name : str, optional
+        Specify the name of the machine associated with the robot, if available.
+    name : str
+        Specify the name of the robot.
+    username : str
+        Specify the username of the robot.
+    type : str
+        Specify the type of the robot.
+    robot_environments : str
+        Specify the environments associated with the robot.
+    """
 
     id: int = Field(alias="Id")
     machine_name: str | None = Field(alias="MachineName", default=None)
@@ -168,7 +451,33 @@ class ListRobots(BaseModel):
 
 
 class ListRobotLogs(BaseModel):
-    """Pydantic data structure for list_robot_logs()."""
+    """
+    Define the data structure for list_robot_logs() responses.
+
+    Specify fields for UiPath Orchestrator robot log metadata, including identifiers, job keys, log levels, Windows
+    identities, process names, timestamps, messages, robot names, and machine IDs.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the robot log.
+    job_key : str
+        Specify the unique key of the job associated with the log.
+    level : str
+        Specify the log level.
+    windows_identity : str
+        Specify the Windows identity associated with the log.
+    process_name : str
+        Specify the name of the process that generated the log.
+    time_stamp : str
+        Specify the timestamp of the log entry.
+    message : str
+        Specify the log message.
+    robot_name : str
+        Specify the name of the robot that generated the log.
+    Machine_id : int
+        Specify the unique identifier of the machine associated with the log.
+    """
 
     id: int = Field(alias="Id")
     job_key: str = Field(alias="JobKey")
@@ -182,7 +491,22 @@ class ListRobotLogs(BaseModel):
 
 
 class ListRoles(BaseModel):
-    """Pydantic data structure for list_roles()."""
+    """
+    Define the data structure for list_roles() responses.
+
+    Specify fields for UiPath Orchestrator role metadata, including identifiers, names, display names, and types.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the role.
+    name : str
+        Specify the name of the role.
+    display_name : str
+        Specify the display name of the role.
+    type : str
+        Specify the type of the role.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -191,7 +515,31 @@ class ListRoles(BaseModel):
 
 
 class ListSchedules(BaseModel):
-    """Pydantic data structure for list_schedules()."""
+    """
+    Define the data structure for list_schedules() responses.
+
+    Specify fields for UiPath Orchestrator schedule metadata, including identifiers, names, package names, environment
+    IDs and names, cron expressions, cron summaries, and enabled status.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the schedule.
+    name : str
+        Specify the name of the schedule.
+    package_name : str
+        Specify the name of the package associated with the schedule.
+    environment_id : str, optional
+        Specify the environment ID associated with the schedule, if available.
+    environment_name : str, optional
+        Specify the environment name associated with the schedule, if available.
+    start_process_cron : str
+        Specify the cron expression for the schedule.
+    start_process_cron_summary : str
+        Specify the summary of the cron expression.
+    enabled : bool
+        Indicate whether the schedule is enabled.
+    """
 
     id: int = Field(alias="Id")
     name: str = Field(alias="Name")
@@ -204,7 +552,31 @@ class ListSchedules(BaseModel):
 
 
 class ListSessions(BaseModel):
-    """Pydantic data structure for list_sessions()."""
+    """
+    Define the data structure for list_sessions() responses.
+
+    Specify fields for UiPath Orchestrator session metadata, including identifiers, machine IDs, host machine names,
+    machine names, states, reporting times, organization unit IDs, and folder names.
+
+    Parameters
+    ----------
+    id : int
+        Specify the unique identifier of the session.
+    machine_id : str, optional
+        Specify the unique identifier of the machine, if available.
+    host_machine_name : str
+        Specify the name of the host machine.
+    machine_name : str, optional
+        Specify the name of the machine, if available.
+    state : str
+        Specify the current state of the session.
+    reporting_time : str
+        Specify the reporting time of the session.
+    organization_unit_id : str, optional
+        Specify the unique identifier of the organization unit, if available.
+    folder_name : str, optional
+        Specify the name of the folder, if available.
+    """
 
     id: int = Field(alias="Id")
     machine_id: str | None = Field(alias="MachineId", default=None)

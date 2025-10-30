@@ -1,5 +1,28 @@
 """
-This library provides a Python client for interacting with the UiPath Orchestrator API.
+UiPath Orchestrator Python Client Library.
+
+This module provides a Python client for interacting with the UiPath Orchestrator API.
+It enables authentication and management of UiPath Orchestrator resources such as assets, buckets, calendars,
+environments, jobs, machines, processes, queues, releases, robots, roles, schedules, and sessions via REST API calls.
+
+Features
+--------
+- Authenticate with UiPath Orchestrator using client credentials.
+- List, create, update, and delete assets, buckets, calendars, environments, jobs, machines, processes, queues,
+releases, robots, roles, schedules, and sessions.
+- Upload and delete files in storage buckets.
+- Add, update, and delete queue items.
+- Retrieve and filter logs and job information.
+- Export API responses to JSON files for auditing or further processing.
+
+Dependencies
+------------
+- requests
+- pydantic
+- dataclasses
+- logging
+
+Intended for use as a utility library in broader data engineering and automation workflows.
 """
 
 # import base64
@@ -35,12 +58,56 @@ logger = logging.getLogger(__name__)
 
 class UiPath(object):
     """
-    UiPath client to interact with UiPath Orchestrator via API.
+    Interact with the UiPath Orchestrator API using a Python client.
+
+    Use this class to authenticate, manage assets, buckets, jobs, queues, robots, and other resources in UiPath
+    Orchestrator via REST API calls. Instantiate the client with your Orchestrator credentials, then call the provided
+    methods to perform operations such as listing, creating, updating, or deleting resources.
+
+    Parameters
+    ----------
+    url_base : str
+        The base URL for the UiPath Orchestrator API.
+    client_id : str
+        The client ID for authentication.
+    refresh_token : str
+        The refresh token or client secret for authentication.
+    scope : str
+        The scope for authentication.
+    custom_logger : logging.Logger, optional
+        Logger instance to use. If None, a default logger is created.
+
+    Attributes
+    ----------
+    _logger : logging.Logger
+        Logger for the client.
+    _session : requests.Session
+        Session object for HTTP requests.
+    _configuration : UiPath.Configuration
+        Configuration dataclass holding credentials and tokens.
     """
 
     @dataclasses.dataclass
     class Configuration:
-        """Configuration dataclass for UiPath client."""
+        """
+        Store configuration parameters for the UiPath client.
+
+        Set and manage the base URL, client credentials, authentication token, and scope required for connecting to the
+        UiPath Orchestrator API.
+
+        Attributes
+        ----------
+        url_base : str or None
+            The base URL for the UiPath Orchestrator API.
+        client_id : str or None
+            The client ID for authentication.
+        refresh_token : str or None
+            The refresh token or client secret for authentication.
+        token : str or None
+            The access token obtained after authentication.
+        scope : str or None
+            The scope for authentication.
+        """
 
         url_base: str | None = None
         client_id: str | None = None
@@ -50,7 +117,25 @@ class UiPath(object):
 
     @dataclasses.dataclass
     class Response:
-        """Response dataclass for UiPath client methods."""
+        """
+        Represent the response from a UiPath client method.
+
+        Store the HTTP status code and the content returned by the UiPath Orchestrator API.
+
+        Parameters
+        ----------
+        status_code : int
+            HTTP status code returned by the API request.
+        content : Any, optional
+            Content of the response, typically a deserialized JSON object or None.
+
+        Attributes
+        ----------
+        status_code : int
+            HTTP status code of the response.
+        content : Any
+            Content of the response, if available.
+        """
 
         status_code: int
         content: Any = None
@@ -66,12 +151,23 @@ class UiPath(object):
         """
         Initialize the UiPath Cloud client with the provided credentials and configuration.
 
-        Args:
-            url_base (str): The base URL for the UiPath Orchestrator API.
-            client_id (str): The client ID for authentication.
-            refresh_token (str): The refresh token for authentication.
-            scope (str): The scope for the authentication.
-            custom_logger (logging.Logger, optional): Logger instance to use. If None, a default logger is created.
+        Parameters
+        ----------
+        url_base : str
+            Specify the base URL for the UiPath Orchestrator API.
+        client_id : str
+            Provide the client ID for authentication.
+        refresh_token : str
+            Provide the refresh token for authentication.
+        scope : str
+            Specify the scope for authentication.
+        custom_logger : logging.Logger, optional
+            Pass a custom logger instance to use. If None, create a default logger.
+
+        Notes
+        -----
+        Set up logging, initialize the HTTP session, store credentials, and authenticate with the UiPath Orchestrator
+        API.
         """
         # Init logging
         # Use provided logger or create a default one
@@ -94,29 +190,71 @@ class UiPath(object):
 
     def __del__(self) -> None:
         """
-        Cleans the house at the exit.
+        Finalize the SharePoint client instance and release resources.
+
+        Close the internal HTTP session and log an informational message indicating cleanup.
+
+        Parameters
+        ----------
+        self : SharePoint
+            The SharePoint client instance.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This method is called when the instance is about to be destroyed. Ensure the HTTP session is closed and log
+        cleanup.
         """
         self._logger.info(msg="Cleans the house at the exit")
         self._session.close()
 
     def is_auth(self) -> bool:
         """
-        Check whether authentication was successful.
+        Check if authentication was successful.
 
-        Returns:
-            bool: If true, then authentication was successful.
+        Returns
+        -------
+        bool
+            True if authentication was successful, otherwise False.
+
+        Notes
+        -----
+        Log the authentication status check.
         """
-        self._logger.info(msg="Gets authentication status")
+        self._logger.info(msg="Checking if authentication is being established with UiPath Orchestrator.")
+
         return False if self._configuration.token is None else True
 
     def auth(self) -> None:
         """
-        Authentication.
+        Authenticate with the UiPath Orchestrator API and obtain an access token.
 
-        This method performs the authentication process to obtain an access token using the client credentials flow. The
-        token is stored in the Configuration dataclass for subsequent API requests.
+        Use the client credentials flow to request an access token from the UiPath identity endpoint.
+        Store the access token in the configuration for use in subsequent API requests.
+        Log the authentication process and HTTP response status.
+
+        Parameters
+        ----------
+        self : SharePoint
+            Instance of the SharePoint client.
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        requests.exceptions.RequestException
+            If the HTTP request fails due to network issues, DNS resolution, or SSL errors.
+        RuntimeError
+            If the token endpoint returns a non-200 HTTP status code.
+        ValueError
+            If the response body does not contain a valid JSON access_token.
         """
-        self._logger.info(msg="Authentication")
+        self._logger.info(msg="Authenticating with UiPath Orchestrator using client credentials.")
 
         # Request headers
         # headers = {"Connection": "keep-alive",
@@ -162,12 +300,23 @@ class UiPath(object):
         """
         Export response content to a JSON file.
 
-        This method takes the content to be exported and saves it to a specified file in JSON format. If the `save_as`
-        parameter is provided, the content will be written to that file.
+        Save the given bytes content to a file in binary mode if a file path is provided.
 
-        Args:
-            content (bytes): The content to be exported, typically the response content from an API call.
-            save_as (str): The file path where the JSON content will be saved. If None, the content will not be saved.
+        Parameters
+        ----------
+        content : bytes
+            Response content to export.
+        save_as : str or None
+            File path to save the JSON content. If None, do not save.
+
+        Returns
+        -------
+        None
+            This function does not return any value.
+
+        Notes
+        -----
+        If `save_as` is specified, write the content to the file in binary mode.
         """
         if save_as is not None:
             self._logger.info(msg="Exports response to JSON file.")
@@ -178,19 +327,29 @@ class UiPath(object):
         self, response: requests.Response, model: Type[BaseModel], rtype: str = "scalar"
     ) -> dict | list[dict]:
         """
-        Handle and deserializes the JSON content from an API response.
+        Handle and deserialize the JSON content from an API response.
 
-        This method processes the response from an API request and deserializes the JSON content into a Pydantic
-        BaseModel or a list of BaseModel instances, depending on the response type.
+        Parameters
+        ----------
+        response : requests.Response
+            Response object from the API request.
+        model : Type[BaseModel]
+            Pydantic BaseModel class for deserialization and validation.
+        rtype : str, optional
+            Specify "scalar" for a single record or "list" for a list of records. Default is "scalar".
 
-        Args:
-            response (requests.Response): The response object from the API request.
-            model (Type[BaseModel]): The Pydantic BaseModel class to use for deserialization and validation.
-            rtype (str, optional): The type of response to handle. Use "scalar" for a single record and "list" for a
-              list of records. Defaults to "scalar".
+        Returns
+        -------
+        dict or list of dict
+            Deserialized content as a dictionary (for scalar) or a list of dictionaries (for list).
 
-        Returns:
-            dict or list[dict]: The deserialized content as a dictionary (scalar) or a list of dictionaries (list).
+        Examples
+        --------
+        >>> self._handle_response(response, MyModel, rtype="scalar")
+        {'field1': 'value1', 'field2': 'value2'}
+
+        >>> self._handle_response(response, MyModel, rtype="list")
+        [{'field1': 'value1'}, {'field1': 'value2'}]
         """
         if rtype.lower() == "scalar":
             # Deserialize json (scalar values)
@@ -212,17 +371,21 @@ class UiPath(object):
     # ASSETS
     def list_assets(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all assets from the UiPath Orchestrator.
+        Retrieve all assets from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str or None, optional
+            Provide the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of assets.
+        Returns
+        -------
+        Response
+            Return a dataclass containing the status code and the list of assets.
         """
-        self._logger.info(msg="Gets a list of all assets")
+        self._logger.info(msg="Retrieving all assets.")
 
         # Configuration
         token = self._configuration.token
@@ -265,19 +428,24 @@ class UiPath(object):
     # BUCKETS
     def list_buckets(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Buckets - Get all.
+        List all storage buckets in UiPath Orchestrator.
 
-        Get the UiPath Orchestrator buckets.
+        Retrieve all storage buckets available in the specified organization unit (folder).
+        Optionally, save the response content to a JSON file.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        save_as : str or None, optional
+            File path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of buckets.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of buckets.
         """
-        self._logger.info(msg="Gets a list of all buckets")
+        self._logger.info(msg="Retrieving the list of all storage buckets.")
 
         # Configuration
         token = self._configuration.token
@@ -319,20 +487,28 @@ class UiPath(object):
 
     def create_bucket(self, fid: str, name: str, guid: str, description: str | None = None) -> Response:
         """
-        Create a new Storage Bucket in UiPath Orchestrator.
+        Create a new storage bucket in UiPath Orchestrator.
 
-        GUID generator: https://www.guidgenerator.com/online-guid-generator.aspx
+        Generate a GUID using an online generator if needed:
+        https://www.guidgenerator.com/online-guid-generator.aspx
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            name (str): The name of the Storage Bucket.
-            guid (str): The unique identifier (GUID) for the Storage Bucket.
-            description (str, optional): A description for the Storage Bucket. Defaults to None.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        name : str
+            Specify the name of the storage bucket.
+        guid : str
+            Specify the unique identifier (GUID) for the storage bucket.
+        description : str, optional
+            Provide a description for the storage bucket. Default is None.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Create bucket")
+        self._logger.info(msg="Creating a new storage bucket.")
         self._logger.info(msg=name)
 
         # Configuration
@@ -381,16 +557,21 @@ class UiPath(object):
 
     def delete_bucket(self, fid: str, id: str) -> Response:
         """
-        Delete a Storage Bucket from UiPath Orchestrator.
+        Delete a storage bucket from UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (str): The ID of the Storage Bucket to delete.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        id : str
+            Specify the ID of the storage bucket to delete.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Deletes storage bucket")
+        self._logger.info(msg="Deleting the specified storage bucket.")
         self._logger.info(msg=id)
 
         # Configuration
@@ -422,19 +603,28 @@ class UiPath(object):
 
     def upload_bucket_file(self, fid: str, id: str, localpath: str, remotepath: str) -> Response:
         """
-        Upload a file to a Storage Bucket.
+        Upload a file to a storage bucket in UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (str): Storage bucket ID (example: 2).
-            localpath (str): The local file to copy.
-            remotepath (str): File name in Storage Bucket.
-              Example: remotepath="PR123.json".
+        Obtain a write URI for the specified file path in the target bucket and upload the local file to the remote
+        storage location.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        id : str
+            Specify the storage bucket ID.
+        localpath : str
+            Specify the local file path to upload.
+        remotepath : str
+            Specify the file name or path in the storage bucket.
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Uploads file to bucket")
+        self._logger.info(msg="Uploading file to the specified bucket.")
         self._logger.info(msg=id)
         self._logger.info(msg=localpath)
         self._logger.info(msg=remotepath)
@@ -479,17 +669,25 @@ class UiPath(object):
 
     def delete_bucket_file(self, fid: str, id: str, filename: str) -> Response:
         """
-        Delete a file from a Storage Bucket.
+        Delete a file from a storage bucket in UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (str): Storage bucket ID.
-            filename (str): The name of the file to delete.
+        Remove the specified file from the given storage bucket within the specified organization unit (folder).
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        id : str
+            Storage bucket ID.
+        filename : str
+            Name of the file to delete.
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Delete bucket file")
+        self._logger.info(msg="Deleting the specified file from the storage bucket.")
         self._logger.info(msg=filename)
 
         # Configuration
@@ -522,17 +720,21 @@ class UiPath(object):
     # CALENDARS
     def list_calendars(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Get the UiPath Orchestrator calendars.
+        Retrieve all calendars from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of calendars.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of calendars.
         """
-        self._logger.info(msg="Gets a list of all calendars")
+        self._logger.info(msg="Retrieving all calendars.")
 
         # Configuration
         token = self._configuration.token
@@ -575,17 +777,21 @@ class UiPath(object):
     # ENVIRONMENTS
     def list_environments(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Get the UiPath Orchestrator environments.
+        Retrieve all environments from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of environments.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of environments.
         """
-        self._logger.info(msg="Gets a list of all environments")
+        self._logger.info(msg="Retrieving all environments.")
 
         # Configuration
         token = self._configuration.token
@@ -632,19 +838,27 @@ class UiPath(object):
     # JOBS
     def list_jobs(self, fid: str, filter: str, save_as: str | None = None) -> Response:
         """
-        Get UiPath Orchestrator jobs.
+        Retrieve jobs from the UiPath Orchestrator using a filter.
 
-        Filter use connetion: https://www.odata.org/documentation/odata-version-2-0/uri-conventions/
+        Apply an OData filter to select jobs matching specific criteria within a given organization unit (folder).
+        Optionally, save the response content to a JSON file.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            filter (str): Condition to be used. Example: State eq 'Running'.
-            save_as (str, optional): Name of the JSON file that contains the request response.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        filter : str
+            Provide the OData filter condition. For example, "State eq 'Running'".
+        save_as : str or None, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of jobs.
+        Returns
+        -------
+        Response
+            Return a dataclass containing the status code and the list of jobs.
         """
-        self._logger.info(msg="Gets a list of all jobs based on the applied filter")
+
+        self._logger.info(msg="Retrieving jobs using the provided filter criteria.")
         self._logger.info(msg=filter)
 
         # Configuration
@@ -687,17 +901,26 @@ class UiPath(object):
 
     def start_job(self, fid: str, process_key: str, robot_id: int | None = None) -> Response:
         """
-        Start a job using a process key and a robot id.
+        Start a job in UiPath Orchestrator using a process key and an optional robot ID.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            process_key (str): Process key. list_releases function, column KEY.
-            robot_id (int, optional): Robot ID code or runs the job on all robots if None.
+        Initiate a job for the specified process in the given organization unit (folder).
+        If a robot ID is provided, run the job on that specific robot; otherwise, run the job on any available robot.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        process_key : str
+            Specify the process key. Use the 'key' column from the list_releases function.
+        robot_id : int, optional
+            Specify the robot ID to run the job on a specific robot. If None, run the job on any available robot.
+
+        Returns
+        -------
+        Response
+            Return a dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Starts the job")
+        self._logger.info(msg="Initiating the process of starting a job.")
         self._logger.info(msg=process_key)
         self._logger.info(msg=robot_id)
 
@@ -759,16 +982,24 @@ class UiPath(object):
 
     def stop_job(self, fid: str, id: str) -> Response:
         """
-        Stop a job using a job id.
+        Stop a job in UiPath Orchestrator using a job ID.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (str): Job Id.
+        Stop the specified job in the given organization unit (folder) by sending a stop request to the UiPath
+        Orchestrator API.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        id : str
+            Specify the job ID to stop.
+
+        Returns
+        -------
+        Response
+            Return a dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Stops a job")
+        self._logger.info(msg="Stopping the specified job.")
         self._logger.info(msg=id)
 
         # Configuration
@@ -804,18 +1035,21 @@ class UiPath(object):
     # MACHINES
     def list_machines(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Machines - Get all.
+        Retrieve all machines from the UiPath Orchestrator.
 
-        Get the machines from the UiPath Orchestrator.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): Name of the JSON file that contains the request response.
-
-        Returns:
-            Response: A dataclass containing the status code and the list of machines.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of machines.
         """
-        self._logger.info(msg="Gets a list of all machines")
+        self._logger.info(msg="Retrieving a list of all machines.")
 
         # Configuration
         token = self._configuration.token
@@ -858,16 +1092,21 @@ class UiPath(object):
     # PROCESSES
     def list_processes(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Get UiPath Orchestrator processes.
+        Retrieve all processes from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): Name of the JSON file that contains the request response.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of processes.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of processes.
         """
-        self._logger.info(msg="Gets a list of all processes")
+        self._logger.info(msg="Retrieving a comprehensive list of all processes.")
 
         # Configuration
         token = self._configuration.token
@@ -912,15 +1151,19 @@ class UiPath(object):
         """
         Retrieve all queues from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of queues.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of queues.
         """
-        self._logger.info(msg="Gets a list of all queues")
+        self._logger.info(msg="Retrieving a comprehensive list of all queues.")
 
         # Configuration
         token = self._configuration.token
@@ -964,17 +1207,22 @@ class UiPath(object):
         """
         Retrieve all queue items from the UiPath Orchestrator based on the specified filter.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            filter (str): The filter condition to select the queue and item status.
-              Example: "QueueDefinitionId eq 1 and Status eq 'New'"
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        filter : str
+            OData filter condition to select the queue and item status.
+            Example: "QueueDefinitionId eq 1 and Status eq 'New'"
+        save_as : str or None, optional
+            File path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of queue items.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of queue items.
         """
-        self._logger.info(msg="Gets a list of queue items using filter")
+        self._logger.info(msg="Retrieving a list of queue items using the provided filter criteria.")
         self._logger.info(msg=filter)
 
         # Configuration
@@ -1019,16 +1267,21 @@ class UiPath(object):
         """
         Retrieve the details of a specific queue item from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (int): The ID of the queue item to retrieve (transaction ID).
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        id : int
+            ID of the queue item to retrieve (transaction ID).
+        save_as : str, optional
+            File path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the details of the queue item.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the details of the queue item.
         """
-        self._logger.info(msg="Gets queue item details from queue")
+        self._logger.info(msg="Retrieving details for the specified queue item from the queue.")
         self._logger.info(msg=id)
 
         # Configuration
@@ -1081,25 +1334,31 @@ class UiPath(object):
         """
         Add an item to a UiPath Orchestrator queue.
 
-        Example: add_queue_item(fid="123",
-                                queue="ElegibilityQueueNAM",
-                                data={"PRCode": "PR1234"},
-                                reference="PR1234",
-                                priority="Normal")
+        Insert a new item into the specified queue within the given organization unit (folder).
+        Set the item's reference, priority, and custom data fields. Optionally, save the response content to a JSON
+        file.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            queue (str): The name of the queue.
-            data (dict): A dictionary containing the item information.
-            reference (str): A unique reference for the queue item.
-            priority (str, optional): The priority of the queue item. Defaults to "Normal".
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        queue : str
+            Specify the name of the queue.
+        data : dict
+            Provide a dictionary containing the item information.
+        reference : str
+            Specify a unique reference for the queue item.
+        priority : str, optional
+            Set the priority of the queue item. Default is "Normal".
+        save_as : str or None, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Adds item to queue")
+        self._logger.info(msg="Adding an item to the queue.")
         self._logger.info(msg=queue)
         self._logger.info(msg=reference)
 
@@ -1163,19 +1422,28 @@ class UiPath(object):
         """
         Update an item in a UiPath Orchestrator queue.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            queue (str): The name of the queue.
-              Example: queue="ElegibilityQueueNAM"
-            id (int): The ID of the queue item to update.
-              Example: id=1489001
-            data (dict): A dictionary containing the updated item information.
-              Example: content={"PRCode": "PR1234"}
+        Modify the specified queue item with new data in the given organization unit (folder).
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        queue : str
+            Name of the queue.
+            Example: queue="ElegibilityQueueNAM"
+        id : int
+            ID of the queue item to update.
+            Example: id=1489001
+        data : dict
+            Dictionary containing the updated item information.
+            Example: content={"PRCode": "PR1234"}
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Updates queue item in the queue")
+        self._logger.info(msg="Updating a queue item in the queue.")
         self._logger.info(msg=queue)
 
         # Configuration
@@ -1221,14 +1489,22 @@ class UiPath(object):
         """
         Delete an item from a UiPath Orchestrator queue.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            id (int): The ID of the queue item to delete (transaction ID).
+        Remove the specified queue item from the given organization unit (folder) by sending a DELETE request to the
+        UiPath Orchestrator API.
 
-        Returns:
-            Response: A dataclass containing the status code and the response content.
+        Parameters
+        ----------
+        fid : str
+            Folder ID for the organization unit.
+        id : int
+            ID of the queue item to delete (transaction ID).
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the response content.
         """
-        self._logger.info(msg="Deletes queue item")
+        self._logger.info(msg="Deleting the specified queue item from the queue.")
         self._logger.info(msg=id)
 
         # Configuration
@@ -1261,17 +1537,21 @@ class UiPath(object):
     # RELEASES
     def list_releases(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all process releases from the UiPath Orchestrator.
+        Retrieve all process releases from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of releases.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of releases.
         """
-        self._logger.info(msg="Gets list of releases")
+        self._logger.info(msg="Retrieving the list of all process releases.")
 
         # Configuration
         token = self._configuration.token
@@ -1314,17 +1594,21 @@ class UiPath(object):
     # ROBOTS
     def list_robots(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all robots from the UiPath Orchestrator.
+        Retrieve all robots from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of robots.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of robots.
         """
-        self._logger.info(msg="Gets a list of all robots")
+        self._logger.info(msg="Retrieving a comprehensive list of all robots.")
 
         # Configuration
         token = self._configuration.token
@@ -1366,22 +1650,26 @@ class UiPath(object):
 
     def list_robot_logs(self, fid: str, filter: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of robot logs from the UiPath Orchestrator.
+        Retrieve robot logs from the UiPath Orchestrator.
 
-        Example: get_robot_logs(fid="123",
-                                filter="JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'")
+        Apply a filter to select robot logs matching specific criteria within a given organization unit (folder).
+        Optionally, save the response content to a JSON file.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            filter (str): The filter condition to apply to the API call.
-              Example: "JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'"
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        filter : str
+            Provide the OData filter condition. For example, "JobKey eq 'bde11c1e-11e1-1bb1-11d1-e11f111111db'".
+        save_as : str or None, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of robot logs.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of robot logs.
         """
-        self._logger.info(msg="Gets a list of robot logs")
+        self._logger.info(msg="Retrieving robot logs based on the provided filter criteria.")
 
         # Configuration
         token = self._configuration.token
@@ -1431,16 +1719,22 @@ class UiPath(object):
     # ROLES
     def list_roles(self, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all roles from the UiPath Orchestrator.
+        Retrieve all roles from the UiPath Orchestrator.
 
-        Args:
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Fetch the list of all roles available in the UiPath Orchestrator instance.
+        Optionally, save the response content to a JSON file.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of roles.
+        Parameters
+        ----------
+        save_as : str, optional
+            File path to save the JSON content. If None, do not save the content.
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of roles.
         """
-        self._logger.info(msg="Gets a list of all roles")
+        self._logger.info(msg="Retrieving a comprehensive list of all roles.")
 
         # Configuration
         token = self._configuration.token
@@ -1483,17 +1777,21 @@ class UiPath(object):
     # SCHEDULES
     def list_schedules(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all schedules from the UiPath Orchestrator.
+        Retrieve all schedules from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved. If None, the content will not
-              be saved.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of schedules.
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of schedules.
         """
-        self._logger.info(msg="Gets a list of all schedules")
+        self._logger.info(msg="Retrieving a comprehensive list of all schedules.")
 
         # Configuration
         token = self._configuration.token
@@ -1536,17 +1834,24 @@ class UiPath(object):
     # SESSIONS
     def list_sessions(self, fid: str, save_as: str | None = None) -> Response:
         """
-        Retrieve a list of all sessions from the UiPath Orchestrator.
+        Retrieve all sessions from the UiPath Orchestrator.
 
-        Args:
-            fid (str): The folder ID for the organization unit.
-            save_as (str, optional): The file path where the JSON content will be saved.
-                                     If None, the content will not be saved.
+        Fetch the list of all sessions available in the specified organization unit (folder).
+        Optionally, save the response content to a JSON file.
 
-        Returns:
-            Response: A dataclass containing the status code and the list of sessions.
+        Parameters
+        ----------
+        fid : str
+            Specify the folder ID for the organization unit.
+        save_as : str, optional
+            Specify the file path to save the JSON content. If None, do not save the content.
+
+        Returns
+        -------
+        Response
+            Dataclass containing the status code and the list of sessions.
         """
-        self._logger.info(msg="Gets a list of all sessions")
+        self._logger.info(msg="Retrieving a comprehensive list of all active sessions.")
 
         # Configuration
         token = self._configuration.token
