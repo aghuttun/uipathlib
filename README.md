@@ -1,9 +1,10 @@
 # uipathlib
 
-* [Description](#package-description)
-* [Usage](#usage)
-* [Installation](#installation)
-* [License](#license)
+- [Description](#package-description)
+- [Usage](#usage)
+- [Installation](#installation)
+- [Docstring](#docstring)
+- [License](#license)
 
 ## Package Description
 
@@ -14,9 +15,7 @@ UiPath Cloud client Python package that uses the [requests](https://pypi.org/pro
 
 ## Usage
 
-* [uipathlib](#uipathlib)
-
-from a script:
+From a script:
 
 ```python
 import uipathlib
@@ -257,8 +256,6 @@ del(uipath)
 
 ## Installation
 
-* [uipathlib](#uipathlib)
-
 Install python and pip if you have not already.
 
 Then run:
@@ -285,8 +282,12 @@ pip install -e ".[dev]"
 
 To test the development package: [Testing](#testing)
 
+## Docstring
+
+The script's docstrings follow the numpydoc style.
+
 ## License
 
-* [uipathlib](#uipathlib)
-
 BSD License (see license file)
+
+* [uipathlib](#uipathlib)
