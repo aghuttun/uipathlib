@@ -250,7 +250,7 @@ if response.status_code == 200:
 ```
 
 ```python
-# Close
+# CLOSE
 del(uipath)
 ```
 
