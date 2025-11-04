@@ -11,7 +11,6 @@ readme = "README.md"
 authors = [{ name = "Paulo Portela", email = "portela.paulo@gmail.com" }]
 maintainers = [{ name = "Paulo Portela", email = "portela.paulo@gmail.com" }]
 license = "BSD-3-Clause"
-license-files = ["LICEN[CS]E*"]
 keywords = ["UiPath", "Orchestrator", "RPA", "Python", "API"]
 classifiers = [
     "Programming Language :: Python :: 3.10",
@@ -26,7 +25,8 @@ classifiers = [
     "Operating System :: MacOS",
     "Operating System :: MacOS :: MacOS X",
 ]
-dependencies = ["requests>=2.0", "pydantic==1.10.24"]
+dependencies = ["requests>=2.0", "pydantic>=1.10.13,<2.0.0"]
+
 [project.optional-dependencies]
 dev = ["twine", "build"]
 
